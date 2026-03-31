@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0d0f0e">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="myDATA">
+<title>myDATA — Αποδείξεις</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.development.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.development.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg:#0d0f0e; --surface:#141716; --border:#2a2f2c;
+    --accent:#00e87a; --accent-dim:#00e87a18; --accent2:#00b85f;
+    --red:#ff4545; --red-dim:#ff454518;
+    --text:#e8ede9; --text-muted:#6b7a6e; --text-dim:#3d4a3f;
+    --mono:'IBM Plex Mono',monospace; --sans:'IBM Plex Sans Condensed',sans-serif;
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  html, body { background:var(--bg); color:var(--text); font-family:var(--mono); min-height:100vh; -webkit-font-smoothing:antialiased; }
+  #root { min-height:100vh; }
+
+  /* ── Mobile-first layout ── */
+  .app { display:flex; flex-direction:column; min-height:100vh; }
+
+  /* Top nav */
+  .topnav {
+    background:var(--surface); border-bottom:1px solid var(--border);
+    padding:14px 16px; display:flex; align-items:center; justify-content:space-between;
+    position:sticky; top:0; z-index:20;
+  }
+  .nav-logo { display:flex; align-items:center; gap:10px; }
+  .logo-badge { background:var(--accent); color:#000; font-family:var(--sans); font-weight:700; font-size:10px; letter-spacing:0.08em; padding:3px 7px; }
+  .logo-title { font-family:var(--sans); font-size:15px; font-weight:700; }
+  .nav-status { display:flex; align-items:center; gap:6px; font-size:10px; color:var(--text-muted); }
+  .sdot { width:6px; height:6px; border-radius:50%; background:var(--text-dim); }
+  .sdot.on { background:var(--accent); box-shadow:0 0 5px var(--accent); }
+
+  /* Env toggle bar */
+  .env-bar { display:flex; border-bottom:1px solid var(--border); }
+  .env-btn { flex:1; background:var(--bg); border:none; border-bottom:2px solid transparent; color:var(--text-muted); font-family:var(--mono); font-size:11px; padding:10px; cursor:pointer; transition:all 0.15s; letter-spacing:0.05em; }
+  .env-btn.active { color:var(--accent); border-bottom-color:var(--accent); background:var(--accent-dim); }
+
+  /* Scrollable content */
+  .content { flex:1; overflow-y:auto; padding:16px; padding-bottom:calc(80px + var(--safe-bottom)); }
+
+  /* Cards */
+  .card { background:var(--surface); border:1px solid var(--border); margin-bottom:12px; }
+  .card-head { padding:12px 16px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:8px; }
+  .card-num { font-size:9px; color:var(--accent); font-weight:600; background:var(--accent-dim); padding:2px 6px; }
+  .card-title { font-family:var(--sans); font-size:13px; font-weight:700; }
+  .card-body { padding:16px; }
+
+  /* Form fields */
+  .field { margin-bottom:14px; }
+  .field:last-child { margin-bottom:0; }
+  .field-label { font-size:10px; color:var(--text-muted); letter-spacing:0.05em; text-transform:uppercase; margin-bottom:6px; }
+  .field-label span { color:var(--accent); }
+  .field-input, .field-sel { width:100%; background:var(--bg); border:1px solid var(--border); color:var(--text); font-family:var(--mono); font-size:14px; padding:11px 12px; outline:none; transition:border-color 0.15s; -webkit-appearance:none; border-radius:0; }
+  .field-input:focus, .field-sel:focus { border-color:var(--accent); }
+  .field-sel { appearance:none; cursor:pointer; }
+  .row2 { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+
+  /* Line items */
+  .line-item { background:var(--bg); border:1px solid var(--border); padding:12px; margin-bottom:8px; position:relative; }
+  .line-item:last-child { margin-bottom:0; }
+  .line-desc { width:100%; background:transparent; border:none; border-bottom:1px solid var(--border); color:var(--text); font-family:var(--mono); font-size:13px; padding:4px 0 8px; outline:none; margin-bottom:10px; }
+  .line-desc::placeholder { color:var(--text-dim); }
+  .line-nums { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-bottom:8px; }
+  .line-num-field { display:flex; flex-direction:column; gap:4px; }
+  .line-num-label { font-size:9px; color:var(--text-dim); letter-spacing:0.08em; text-transform:uppercase; }
+  .line-num-input { background:var(--bg); border:1px solid var(--border); color:var(--text); font-family:var(--mono); font-size:13px; padding:7px 8px; outline:none; width:100%; transition:border-color 0.15s; -webkit-appearance:none; border-radius:0; }
+  .line-num-input:focus { border-color:var(--accent); }
+  .line-footer { display:flex; justify-content:space-between; align-items:center; }
+  .line-vat-sel { background:var(--bg); border:1px solid var(--border); color:var(--text-muted); font-family:var(--mono); font-size:11px; padding:5px 8px; outline:none; -webkit-appearance:none; cursor:pointer; }
+  .line-total { font-size:13px; color:var(--accent); font-weight:600; }
+  .line-del { position:absolute; top:10px; right:10px; background:none; border:1px solid var(--border); color:var(--text-dim); width:24px; height:24px; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:14px; transition:all 0.15s; }
+  .line-del:hover { border-color:var(--red); color:var(--red); }
+
+  .add-line { width:100%; background:none; border:1px dashed var(--border); color:var(--text-muted); font-family:var(--mono); font-size:12px; padding:10px; cursor:pointer; margin-top:10px; transition:all 0.15s; }
+  .add-line:hover { border-color:var(--accent); color:var(--accent); }
+
+  /* Summary */
+  .sum-row { display:flex; justify-content:space-between; padding:9px 16px; border-bottom:1px solid var(--border); font-size:12px; }
+  .sum-row:last-child { border-bottom:none; }
+  .sum-label { color:var(--text-muted); }
+  .sum-val { font-weight:600; }
+  .sum-total { background:var(--accent-dim); border-top:2px solid var(--accent) !important; }
+  .sum-total .sum-label { color:var(--accent); font-size:11px; }
+  .sum-total .sum-val { color:var(--accent); font-size:15px; }
+  .vat-sub { padding:5px 16px; background:var(--bg); border-bottom:1px solid var(--border); display:flex; justify-content:space-between; font-size:10px; color:var(--text-muted); }
+
+  /* Bottom action bar */
+  .bottom-bar {
+    position:fixed; bottom:0; left:0; right:0;
+    background:var(--surface); border-top:1px solid var(--border);
+    padding:12px 16px; padding-bottom:calc(12px + var(--safe-bottom));
+    display:flex; gap:10px; z-index:20;
+  }
+  .btn-send { flex:1; background:var(--accent); border:none; color:#000; font-family:var(--sans); font-size:14px; font-weight:700; padding:14px; cursor:pointer; letter-spacing:0.05em; text-transform:uppercase; transition:all 0.15s; }
+  .btn-send:disabled { background:var(--border); color:var(--text-dim); cursor:not-allowed; }
+  .btn-xml { background:none; border:1px solid var(--border); color:var(--text-muted); font-family:var(--mono); font-size:11px; padding:14px 14px; cursor:pointer; white-space:nowrap; }
+
+  /* Settings drawer */
+  .drawer-overlay { position:fixed; inset:0; background:#00000088; z-index:30; }
+  .drawer { position:fixed; bottom:0; left:0; right:0; background:var(--surface); border-top:1px solid var(--border); z-index:31; max-height:85vh; overflow-y:auto; padding-bottom:var(--safe-bottom); }
+  .drawer-handle { width:36px; height:4px; background:var(--border); border-radius:2px; margin:12px auto 8px; }
+  .drawer-title { font-family:var(--sans); font-size:14px; font-weight:700; padding:0 20px 16px; border-bottom:1px solid var(--border); }
+  .drawer-body { padding:16px 20px; }
+
+  /* XML modal */
+  .modal-overlay { position:fixed; inset:0; background:#00000099; z-index:40; display:flex; align-items:flex-end; }
+  .modal { background:var(--surface); border-top:1px solid var(--border); width:100%; max-height:80vh; display:flex; flex-direction:column; }
+  .modal-head { padding:14px 16px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; }
+  .modal-title { font-family:var(--sans); font-size:13px; font-weight:700; }
+  .modal-close { background:none; border:1px solid var(--border); color:var(--text-muted); font-family:var(--mono); font-size:12px; padding:5px 10px; cursor:pointer; }
+  .xml-pre { flex:1; overflow:auto; padding:14px; font-size:10px; line-height:1.7; color:var(--text-muted); white-space:pre; background:var(--bg); }
+
+  /* Response */
+  .resp-card { border:1px solid var(--border); margin-bottom:12px; }
+  .resp-ok { border-color:var(--accent); background:var(--accent-dim); }
+  .resp-err { border-color:var(--red); background:var(--red-dim); }
+  .resp-head { padding:12px 16px; border-bottom:1px solid inherit; display:flex; align-items:center; gap:8px; }
+  .resp-mark { font-size:10px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; }
+  .resp-mark.ok { color:var(--accent); }
+  .resp-mark.er { color:var(--red); }
+  .resp-body { padding:12px 16px; font-size:11px; line-height:1.8; }
+  .uid { color:var(--accent); font-size:11px; word-break:break-all; margin-top:4px; }
+
+  /* Log */
+  .log-wrap { padding:8px 12px; max-height:120px; overflow-y:auto; }
+  .log-line { font-size:10px; padding:3px 0; border-bottom:1px solid var(--border); display:flex; gap:8px; }
+  .log-t { color:var(--text-dim); min-width:60px; flex-shrink:0; }
+  .log-ok { color:var(--accent); }
+  .log-er { color:var(--red); }
+
+  @keyframes spin { to { transform:rotate(360deg); } }
+  .spinner { display:inline-block; width:13px; height:13px; border:2px solid #00000033; border-top-color:#000; border-radius:50%; animation:spin 0.7s linear infinite; vertical-align:middle; margin-right:6px; }
+
+  ::-webkit-scrollbar { width:3px; }
+  ::-webkit-scrollbar-thumb { background:var(--border); }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useMemo, useEffect } = React;
+
+// Σε Vercel το endpoint είναι /api/send (same domain = no CORS)
+const PROXY = '/api/send';
+
+const VAT = [
+  { code:1, label:'24%', rate:0.24 },
+  { code:2, label:'13%', rate:0.13 },
+  { code:3, label:'6%',  rate:0.06 },
+  { code:7, label:'0%',  rate:0.00 },
+  { code:8, label:'Απαλλ.', rate:0.00 },
+];
+const TYPES = [
+  { code:'11.1', label:'11.1 — ΑΛΠ (Απόδειξη Λιανικής)' },
+  { code:'11.2', label:'11.2 — ΑΠΥ (Παροχή Υπηρεσιών)' },
+  { code:'11.3', label:'11.3 — Απλοποιημένο Τιμολόγιο' },
+  { code:'11.4', label:'11.4 — Πιστωτικό Στοιχείο' },
+];
+const PAY = [
+  { code:2, label:'Μετρητά' }, { code:3, label:'Πιστωτική Κάρτα' },
+  { code:6, label:'POS' }, { code:7, label:'IRIS' },
+  { code:5, label:'Web Banking' }, { code:1, label:'Επαγ. Λογαριασμός' },
+];
+
+const esc = s => (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const fmt = n => n.toFixed(2).replace('.',',') + ' €';
+const nL = () => ({ id:Date.now()+Math.random(), desc:'', qty:'1', price:'', vat:1 });
+
+// Persist credentials in localStorage
+const STORE_KEY = 'mydata_creds';
+function loadCreds() {
+  try { return JSON.parse(localStorage.getItem(STORE_KEY)) || {}; } catch { return {}; }
+}
+function saveCreds(c) {
+  try { localStorage.setItem(STORE_KEY, JSON.stringify(c)); } catch {}
+}
+
+function buildXML({ afm, branch, series, aa, type, pay, lines, totals }) {
+  const date = new Date().toISOString().slice(0,10);
+  const lx = lines.map((l,i) => {
+    const vc = VAT.find(v=>v.code===Number(l.vat));
+    const net = ((parseFloat(l.qty)||0)*(parseFloat(l.price)||0)).toFixed(2);
+    const vat = (parseFloat(net)*(vc?.rate||0)).toFixed(2);
+    return `    <invoiceDetails>
+      <lineNumber>${i+1}</lineNumber>
+      <netValue>${net}</netValue>
+      <vatCategory>${l.vat}</vatCategory>
+      <vatAmount>${vat}</vatAmount>
+      <discountOption>false</discountOption>
+      <quantity>${l.qty}</quantity>
+      <itemDescr>${esc(l.desc)}</itemDescr>
+    </invoiceDetails>`;
+  }).join('\n');
+  const vx = Object.entries(totals.vg).map(([cat,{net,vat}]) => {
+    const pct = (VAT.find(v=>v.code===Number(cat))?.rate||0)*100;
+    return `    <vatInfo>
+      <vatCategory>${cat}</vatCategory>
+      <vatPercent>${pct}</vatPercent>
+      <underlyingValue>${net.toFixed(2)}</underlyingValue>
+      <vatAmount>${vat.toFixed(2)}</vatAmount>
+    </vatInfo>`;
+  }).join('\n');
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<InvoicesDoc xmlns="https://www.aade.gr/myDATA/invoice/v1.0.7_official"
+             xmlns:icls="https://www.aade.gr/myDATA/incomeClassification/v1.0.3"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <invoice>
+    <issuer>
+      <vatNumber>${afm}</vatNumber>
+      <country>GR</country>
+      <branch>${branch||0}</branch>
+    </issuer>
+    <invoiceHeader>
+      <series>${series||'A'}</series>
+      <aa>${aa}</aa>
+      <issueDate>${date}</issueDate>
+      <invoiceType>${type}</invoiceType>
+      <currency>EUR</currency>
+    </invoiceHeader>
+${lx}
+    <invoiceSummary>
+      <totalNetValue>${totals.net.toFixed(2)}</totalNetValue>
+      <totalVatAmount>${totals.vat.toFixed(2)}</totalVatAmount>
+      <totalWithheldAmount>0.00</totalWithheldAmount>
+      <totalFeesAmount>0.00</totalFeesAmount>
+      <totalStampDutyAmount>0.00</totalStampDutyAmount>
+      <totalOtherTaxesAmount>0.00</totalOtherTaxesAmount>
+      <totalDeductionsAmount>0.00</totalDeductionsAmount>
+      <totalGrossValue>${totals.gross.toFixed(2)}</totalGrossValue>
+${vx}
+    </invoiceSummary>
+    <paymentMethods>
+      <paymentMethodDetails>
+        <type>${pay}</type>
+        <amount>${totals.gross.toFixed(2)}</amount>
+      </paymentMethodDetails>
+    </paymentMethods>
+  </invoice>
+</InvoicesDoc>`;
+}
+
+function App() {
+  const saved = loadCreds();
+  const [cr, setCr] = useState({ user:saved.user||'', key:saved.key||'', afm:saved.afm||'', branch:saved.branch||'0', series:saved.series||'A' });
+  const [env, setEnv] = useState('test');
+  const [itype, setItype] = useState('11.1');
+  const [pay, setPay] = useState(2);
+  const [lines, setLines] = useState([nL()]);
+  const [loading, setLoading] = useState(false);
+  const [resp, setResp] = useState(null);
+  const [history, setHistory] = useState([]);
+  const [aa, setAa] = useState(1);
+  const [showXml, setShowXml] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [logs, setLogs] = useState([]);
+
+  const log = (msg, type='info') => {
+    const t = new Date().toLocaleTimeString('el',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+    setLogs(p=>[{t,msg,type},...p.slice(0,14)]);
+  };
+
+  const setC = (k,v) => {
+    const next = {...cr,[k]:v};
+    setCr(next);
+    saveCreds(next);
+  };
+
+  const totals = useMemo(() => {
+    let net=0,vat=0; const vg={};
+    for (const l of lines) {
+      const q=parseFloat(l.qty)||0, p=parseFloat(l.price)||0;
+      const vc=VAT.find(v=>v.code===Number(l.vat));
+      const ln=q*p, lv=ln*(vc?.rate||0);
+      net+=ln; vat+=lv;
+      if(!vg[l.vat]) vg[l.vat]={net:0,vat:0};
+      vg[l.vat].net+=ln; vg[l.vat].vat+=lv;
+    }
+    return { net, vat, gross:net+vat, vg };
+  }, [lines]);
+
+  const xml = useMemo(() => buildXML({
+    afm:cr.afm, branch:cr.branch, series:cr.series, aa,
+    type:itype, pay, lines, totals
+  }), [cr, aa, itype, pay, lines, totals]);
+
+  const upd = (id,f,v) => setLines(p=>p.map(l=>l.id===id?{...l,[f]:v}:l));
+  const rem = id => setLines(p=>p.length>1?p.filter(l=>l.id!==id):p);
+
+  const canSubmit = cr.user && cr.key && cr.afm && lines.every(l=>l.desc&&l.qty&&l.price);
+
+  const submit = async () => {
+    setLoading(true); setResp(null);
+    log('Αποστολή XML...');
+    try {
+      const r = await fetch(PROXY, {
+        method:'POST',
+        headers:{
+          'Content-Type':'application/xml',
+          'aade-user-id': cr.user,
+          'Ocp-Apim-Subscription-Key': cr.key,
+          'x-env': env,
+        },
+        body: xml,
+      });
+      const text = await r.text();
+      if (r.ok) {
+        const uid = text.match(/<uid>([^<]+)<\/uid>/)?.[1];
+        const auth = text.match(/<authenticationCode>([^<]+)<\/authenticationCode>/)?.[1];
+        log(`✓ UID: ${uid||'N/A'}`, 'ok');
+        setResp({ ok:true, uid, auth, raw:text });
+        setHistory(h=>[{uid:uid||'—',type:itype,gross:totals.gross,date:new Date().toLocaleTimeString('el'),aa},...h.slice(0,9)]);
+        setAa(n=>n+1);
+        // Reset lines
+        setLines([nL()]);
+      } else {
+        log(`✗ HTTP ${r.status}`, 'err');
+        setResp({ ok:false, raw:text, status:r.status });
+      }
+    } catch(e) {
+      log(`✗ ${e.message}`, 'err');
+      setResp({ ok:false, raw:e.message, status:'ERROR' });
+    }
+    setLoading(false);
+  };
+
+  const ready = cr.user && cr.key && cr.afm;
+
+  return (
+    <div className="app">
+      {/* Top nav */}
+      <div className="topnav">
+        <div className="nav-logo">
+          <div className="logo-badge">myDATA</div>
+          <div className="logo-title">Αποδείξεις</div>
+        </div>
+        <div style={{display:'flex',alignItems:'center',gap:10}}>
+          <div className="nav-status">
+            <div className={`sdot${ready?' on':''}`}/>
+            {ready ? env.toUpperCase() : 'Ρυθμίσεις'}
+          </div>
+          <button style={{background:'none',border:'1px solid var(--border)',color:'var(--text-muted)',fontFamily:'var(--mono)',fontSize:11,padding:'5px 10px',cursor:'pointer'}}
+            onClick={()=>setShowSettings(true)}>⚙</button>
+        </div>
+      </div>
+
+      {/* Env bar */}
+      <div className="env-bar">
+        <button className={`env-btn${env==='test'?' active':''}`} onClick={()=>setEnv('test')}>TEST</button>
+        <button className={`env-btn${env==='prod'?' active':''}`} onClick={()=>setEnv('prod')}>ΠΑΡΑΓΩΓΗ</button>
+      </div>
+
+      {/* Main content */}
+      <div className="content">
+
+        {/* Response */}
+        {resp && (
+          <div className={`resp-card ${resp.ok?'resp-ok':'resp-err'}`}>
+            <div className="resp-head">
+              <div className="card-num">{resp.ok?'✓':'✗'}</div>
+              <div className={`resp-mark ${resp.ok?'ok':'er'}`}>{resp.ok?'Επιτυχής Υποβολή':`Σφάλμα ${resp.status}`}</div>
+            </div>
+            <div className="resp-body">
+              {resp.ok ? (
+                <>
+                  {resp.uid && <><div style={{fontSize:9,color:'var(--text-muted)'}}>UID ΜΑΡΚ</div><div className="uid">{resp.uid}</div></>}
+                  {resp.auth && <><div style={{fontSize:9,color:'var(--text-muted)',marginTop:8}}>Auth. Code</div><div className="uid">{resp.auth}</div></>}
+                </>
+              ) : (
+                <pre style={{fontSize:10,color:'var(--red)',whiteSpace:'pre-wrap',wordBreak:'break-word'}}>{resp.raw}</pre>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Invoice type + payment */}
+        <div className="card">
+          <div className="card-head"><div className="card-num">01</div><div className="card-title">Παραστατικό</div></div>
+          <div className="card-body">
+            <div className="field">
+              <div className="field-label">Τύπος <span>*</span></div>
+              <select className="field-sel" value={itype} onChange={e=>setItype(e.target.value)}>
+                {TYPES.map(t=><option key={t.code} value={t.code}>{t.label}</option>)}
+              </select>
+            </div>
+            <div className="field">
+              <div className="field-label">Πληρωμή <span>*</span></div>
+              <select className="field-sel" value={pay} onChange={e=>setPay(Number(e.target.value))}>
+                {PAY.map(p=><option key={p.code} value={p.code}>{p.label}</option>)}
+              </select>
+            </div>
+            <div className="row2">
+              <div className="field">
+                <div className="field-label">Σειρά</div>
+                <input className="field-input" value={cr.series} onChange={e=>setC('series',e.target.value)} placeholder="A"/>
+              </div>
+              <div className="field">
+                <div className="field-label">ΑΑ</div>
+                <input className="field-input" type="number" value={aa} onChange={e=>setAa(Number(e.target.value))}/>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Lines */}
+        <div className="card">
+          <div className="card-head"><div className="card-num">02</div><div className="card-title">Είδη / Υπηρεσίες</div></div>
+          <div className="card-body">
+            {lines.map((l,i)=>{
+              const vc=VAT.find(v=>v.code===Number(l.vat));
+              const gross=((parseFloat(l.qty)||0)*(parseFloat(l.price)||0))*(1+(vc?.rate||0));
+              return (
+                <div className="line-item" key={l.id}>
+                  {lines.length>1 && <button className="line-del" onClick={()=>rem(l.id)}>×</button>}
+                  <input className="line-desc" placeholder={`Είδος / Υπηρεσία ${i+1}...`} value={l.desc} onChange={e=>upd(l.id,'desc',e.target.value)}/>
+                  <div className="line-nums">
+                    <div className="line-num-field">
+                      <div className="line-num-label">Ποσ.</div>
+                      <input className="line-num-input" type="number" min="0" step="0.01" value={l.qty} onChange={e=>upd(l.id,'qty',e.target.value)}/>
+                    </div>
+                    <div className="line-num-field">
+                      <div className="line-num-label">Τιμή (χ/ΦΠΑ)</div>
+                      <input className="line-num-input" type="number" min="0" step="0.01" placeholder="0.00" value={l.price} onChange={e=>upd(l.id,'price',e.target.value)}/>
+                    </div>
+                    <div className="line-num-field">
+                      <div className="line-num-label">ΦΠΑ</div>
+                      <select className="line-num-input" value={l.vat} onChange={e=>upd(l.id,'vat',Number(e.target.value))}>
+                        {VAT.map(v=><option key={v.code} value={v.code}>{v.label}</option>)}
+                      </select>
+                    </div>
+                  </div>
+                  <div className="line-footer">
+                    <div style={{fontSize:9,color:'var(--text-dim)'}}>ΦΠΑ {vc?.label}</div>
+                    <div className="line-total">{fmt(gross)}</div>
+                  </div>
+                </div>
+              );
+            })}
+            <button className="add-line" onClick={()=>setLines(p=>[...p,nL()])}>+ Προσθήκη γραμμής</button>
+          </div>
+        </div>
+
+        {/* Summary */}
+        <div className="card" style={{marginBottom:0}}>
+          <div className="card-head"><div className="card-num">03</div><div className="card-title">Σύνοψη</div></div>
+          <div className="sum-row"><span className="sum-label">Καθαρή Αξία</span><span className="sum-val">{fmt(totals.net)}</span></div>
+          {Object.entries(totals.vg).map(([cat,{net,vat}])=>{
+            const vi=VAT.find(v=>v.code===Number(cat));
+            return <div className="vat-sub" key={cat}><span>ΦΠΑ {vi?.label} επί {fmt(net)}</span><span>{fmt(vat)}</span></div>;
+          })}
+          <div className="sum-row"><span className="sum-label">Σύνολο ΦΠΑ</span><span className="sum-val">{fmt(totals.vat)}</span></div>
+          <div className="sum-row sum-total"><span className="sum-label">ΣΥΝΟΛΟ ΠΛΗΡΩΤΕΟ</span><span className="sum-val">{fmt(totals.gross)}</span></div>
+        </div>
+
+        {/* Log */}
+        {logs.length>0 && (
+          <div className="card" style={{marginTop:12}}>
+            <div className="card-head"><div className="card-num">LOG</div><div className="card-title">Αρχείο</div></div>
+            <div className="log-wrap">
+              {logs.map((l,i)=>(
+                <div className="log-line" key={i}>
+                  <span className="log-t">{l.t}</span>
+                  <span className={l.type==='ok'?'log-ok':l.type==='err'?'log-er':''}>{l.msg}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* History */}
+        {history.length>0 && (
+          <div className="card" style={{marginTop:12}}>
+            <div className="card-head"><div className="card-num">ΙΣΤΟΡΙΚΟ</div><div className="card-title">Εκδόσεις</div></div>
+            <div style={{padding:'8px 12px'}}>
+              {history.map((h,i)=>(
+                <div key={i} style={{padding:'8px 4px',borderBottom:'1px solid var(--border)',fontSize:11}}>
+                  <span style={{color:'var(--accent)',fontWeight:600}}>{h.type} #{h.aa}</span>
+                  <span style={{color:'var(--text-muted)',marginLeft:10}}>{h.date} · {fmt(h.gross)}</span>
+                  <div style={{fontSize:9,color:'var(--text-dim)',marginTop:2,wordBreak:'break-all'}}>{h.uid}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+      </div>
+
+      {/* Bottom action bar */}
+      <div className="bottom-bar">
+        <button className="btn-xml" onClick={()=>setShowXml(true)}>XML</button>
+        <button className="btn-send" onClick={submit} disabled={!canSubmit||loading}>
+          {loading ? <><span className="spinner"/>Αποστολή...</> : '→ Αποστολή στην ΑΑΔΕ'}
+        </button>
+      </div>
+
+      {/* XML Modal */}
+      {showXml && (
+        <div className="modal-overlay" onClick={()=>setShowXml(false)}>
+          <div className="modal" onClick={e=>e.stopPropagation()}>
+            <div className="modal-head">
+              <div className="modal-title">XML Payload</div>
+              <div style={{display:'flex',gap:8}}>
+                <button className="modal-close" onClick={()=>navigator.clipboard.writeText(xml)}>copy</button>
+                <button className="modal-close" onClick={()=>setShowXml(false)}>✕</button>
+              </div>
+            </div>
+            <pre className="xml-pre">{xml}</pre>
+          </div>
+        </div>
+      )}
+
+      {/* Settings Drawer */}
+      {showSettings && (
+        <>
+          <div className="drawer-overlay" onClick={()=>setShowSettings(false)}/>
+          <div className="drawer">
+            <div className="drawer-handle"/>
+            <div className="drawer-title">Στοιχεία Σύνδεσης ΑΑΔΕ</div>
+            <div className="drawer-body">
+              <div className="field">
+                <div className="field-label">AADE User ID <span>*</span></div>
+                <input className="field-input" placeholder="myDATA username" value={cr.user} onChange={e=>setC('user',e.target.value)}/>
+              </div>
+              <div className="field">
+                <div className="field-label">Subscription Key <span>*</span></div>
+                <input className="field-input" type="password" placeholder="API Key" value={cr.key} onChange={e=>setC('key',e.target.value)}/>
+              </div>
+              <div className="field">
+                <div className="field-label">ΑΦΜ Εκδότη <span>*</span></div>
+                <input className="field-input" placeholder="9ψήφιο ΑΦΜ" value={cr.afm} onChange={e=>setC('afm',e.target.value)}/>
+              </div>
+              <div className="row2">
+                <div className="field">
+                  <div className="field-label">Παράρτημα</div>
+                  <input className="field-input" placeholder="0" value={cr.branch} onChange={e=>setC('branch',e.target.value)}/>
+                </div>
+              </div>
+              <div style={{marginTop:4,padding:'10px 12px',background:'var(--accent-dim)',border:'1px solid var(--accent)',fontSize:10,color:'var(--accent)',lineHeight:1.7}}>
+                Τα στοιχεία αποθηκεύονται τοπικά στον browser σου.
+              </div>
+              <button style={{marginTop:16,width:'100%',background:'var(--accent)',border:'none',color:'#000',fontFamily:'var(--sans)',fontSize:14,fontWeight:700,padding:14,cursor:'pointer'}}
+                onClick={()=>setShowSettings(false)}>Αποθήκευση</button>
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
