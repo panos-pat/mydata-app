@@ -199,8 +199,7 @@ function buildXML({ afm, branch, series, aa, type, pay, lines, totals }) {
       <vatCategory>${l.vat}</vatCategory>
       <vatAmount>${vat}</vatAmount>
       <discountOption>false</discountOption>
-      <quantity>${l.qty}</quantity>
-      <itemDescr>${esc(l.desc)}</itemDescr>
+        <itemDescr>${esc(l.desc)}</itemDescr>
     </invoiceDetails>`;
   }).join('\n');
   const vx = Object.entries(totals.vg).map(([cat,{net,vat}]) => {
@@ -239,7 +238,6 @@ ${lx}
       <totalOtherTaxesAmount>0.00</totalOtherTaxesAmount>
       <totalDeductionsAmount>0.00</totalDeductionsAmount>
       <totalGrossValue>${totals.gross.toFixed(2)}</totalGrossValue>
-${vx}
     </invoiceSummary>
     <paymentMethods>
       <paymentMethodDetails>
