@@ -153,7 +153,7 @@
 const { useState, useMemo, useEffect } = React;
 
 // Σε Vercel το endpoint είναι /api/send (same domain = no CORS)
-const PROXY = 'https://mydata-proxy-production.up.railway.app/send';
+const PROXY = '/api/send';
 
 const VAT = [
   { code:1, label:'24%', rate:0.24 },
@@ -189,6 +189,12 @@ function saveCreds(c) {
 
 function buildXML({ afm, branch, series, aa, type, pay, lines, totals }) {
   const date = new Date().toISOString().slice(0,10);
+  // Map invoice type to income classification type & category
+  // 11.1/11.2 → category1_3 (Retail sales / services income)
+  // For retail receipts (B2C), classification type E3_561001 is typical
+  const iclsType = type.startsWith('11.2') ? 'E3_561003' : 'E3_561001';
+  const iclsCat = 'category1_3';
+  
   const lx = lines.map((l,i) => {
     const vc = VAT.find(v=>v.code===Number(l.vat));
     const net = ((parseFloat(l.qty)||0)*(parseFloat(l.price)||0)).toFixed(2);
@@ -199,7 +205,12 @@ function buildXML({ afm, branch, series, aa, type, pay, lines, totals }) {
       <vatCategory>${l.vat}</vatCategory>
       <vatAmount>${vat}</vatAmount>
       <discountOption>false</discountOption>
-        <itemDescr>${esc(l.desc)}</itemDescr>
+      <itemDescr>${esc(l.desc)}</itemDescr>
+      <incomeClassification>
+        <icls:classificationType>${iclsType}</icls:classificationType>
+        <icls:classificationCategory>${iclsCat}</icls:classificationCategory>
+        <icls:amount>${net}</icls:amount>
+      </incomeClassification>
     </invoiceDetails>`;
   }).join('\n');
   const vx = Object.entries(totals.vg).map(([cat,{net,vat}]) => {
@@ -314,14 +325,33 @@ function App() {
       });
       const text = await r.text();
       if (r.ok) {
-        const uid = text.match(/<uid>([^<]+)<\/uid>/)?.[1];
-        const auth = text.match(/<authenticationCode>([^<]+)<\/authenticationCode>/)?.[1];
-        log(`✓ UID: ${uid||'N/A'}`, 'ok');
-        setResp({ ok:true, uid, auth, raw:text });
-        setHistory(h=>[{uid:uid||'—',type:itype,gross:totals.gross,date:new Date().toLocaleTimeString('el'),aa},...h.slice(0,9)]);
-        setAa(n=>n+1);
-        // Reset lines
-        setLines([nL()]);
+        // Parse AADE response XML — check for errors first
+        const errMatch = text.match(/<[^:]*:?errors?\b[^>]*>[\s\S]*?<[^:]*:?message>([^<]+)<\/[^:]*:?message>/i);
+        const statusCode = text.match(/<[^:]*:?statusCode>([^<]+)<\/[^:]*:?statusCode>/i)?.[1];
+        
+        if (statusCode === 'Error' || errMatch) {
+          const errMsg = errMatch?.[1] || 'Άγνωστο σφάλμα ΑΑΔΕ';
+          log(`✗ ΑΑΔΕ: ${errMsg}`, 'err');
+          setResp({ ok:false, raw:text, status:'ΑΑΔΕ Error' });
+        } else {
+          // Extract mark, uid, qrUrl — try both with and without namespace prefix
+          const extract = (tag) => {
+            const re = new RegExp('<(?:[\\w]+:)?' + tag + '>([^<]+)</(?:[\\w]+:)?' + tag + '>', 'i');
+            return text.match(re)?.[1] || null;
+          };
+          const uid = extract('invoiceUid');
+          const mark = extract('invoiceMark');
+          const qrUrl = extract('qrUrl');
+          const auth = extract('authenticationCode');
+          
+          log(`✓ MARK: ${mark||'N/A'} | UID: ${uid||'N/A'}`, 'ok');
+          if (qrUrl) log(`QR: ${qrUrl}`, 'ok');
+          setResp({ ok:true, uid, mark, qrUrl, auth, raw:text });
+          setHistory(h=>[{uid:uid||'—',mark:mark||'—',type:itype,gross:totals.gross,date:new Date().toLocaleTimeString('el'),aa},...h.slice(0,9)]);
+          setAa(n=>n+1);
+          // Reset lines
+          setLines([nL()]);
+        }
       } else {
         log(`✗ HTTP ${r.status}`, 'err');
         setResp({ ok:false, raw:text, status:r.status });
@@ -372,8 +402,10 @@ function App() {
             <div className="resp-body">
               {resp.ok ? (
                 <>
-                  {resp.uid && <><div style={{fontSize:9,color:'var(--text-muted)'}}>UID ΜΑΡΚ</div><div className="uid">{resp.uid}</div></>}
+                  {resp.mark && <><div style={{fontSize:9,color:'var(--text-muted)'}}>ΜΑΡΚ</div><div className="uid" style={{fontSize:14,fontWeight:600}}>{resp.mark}</div></>}
+                  {resp.uid && <><div style={{fontSize:9,color:'var(--text-muted)',marginTop:8}}>UID</div><div className="uid">{resp.uid}</div></>}
                   {resp.auth && <><div style={{fontSize:9,color:'var(--text-muted)',marginTop:8}}>Auth. Code</div><div className="uid">{resp.auth}</div></>}
+                  {resp.qrUrl && <><div style={{fontSize:9,color:'var(--text-muted)',marginTop:8}}>QR URL</div><div className="uid"><a href={resp.qrUrl} target="_blank" rel="noopener" style={{color:'var(--accent)'}}>{resp.qrUrl}</a></div></>}
                 </>
               ) : (
                 <pre style={{fontSize:10,color:'var(--red)',whiteSpace:'pre-wrap',wordBreak:'break-word'}}>{resp.raw}</pre>
@@ -485,6 +517,7 @@ function App() {
                 <div key={i} style={{padding:'8px 4px',borderBottom:'1px solid var(--border)',fontSize:11}}>
                   <span style={{color:'var(--accent)',fontWeight:600}}>{h.type} #{h.aa}</span>
                   <span style={{color:'var(--text-muted)',marginLeft:10}}>{h.date} · {fmt(h.gross)}</span>
+                  {h.mark && h.mark!=='—' && <div style={{fontSize:10,color:'var(--accent)',marginTop:2}}>MARK: {h.mark}</div>}
                   <div style={{fontSize:9,color:'var(--text-dim)',marginTop:2,wordBreak:'break-all'}}>{h.uid}</div>
                 </div>
               ))}
