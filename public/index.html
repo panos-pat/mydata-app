@@ -189,12 +189,9 @@ function saveCreds(c) {
 
 function buildXML({ afm, branch, series, aa, type, pay, lines, totals }) {
   const date = new Date().toISOString().slice(0,10);
-  // Map invoice type to income classification type & category
-  // 11.1/11.2 → category1_3 (Retail sales / services income)
-  // For retail receipts (B2C), classification type E3_561001 is typical
-  const iclsType = type.startsWith('11.2') ? 'E3_561003' : 'E3_561001';
+  // Income classification: retail sales of goods/services
+  const iclsType = type === '11.2' ? 'E3_561_003' : 'E3_561_003';
   const iclsCat = 'category1_3';
-  
   const lx = lines.map((l,i) => {
     const vc = VAT.find(v=>v.code===Number(l.vat));
     const net = ((parseFloat(l.qty)||0)*(parseFloat(l.price)||0)).toFixed(2);
@@ -204,23 +201,12 @@ function buildXML({ afm, branch, series, aa, type, pay, lines, totals }) {
       <netValue>${net}</netValue>
       <vatCategory>${l.vat}</vatCategory>
       <vatAmount>${vat}</vatAmount>
-      <discountOption>false</discountOption>
-      <itemDescr>${esc(l.desc)}</itemDescr>
       <incomeClassification>
         <icls:classificationType>${iclsType}</icls:classificationType>
         <icls:classificationCategory>${iclsCat}</icls:classificationCategory>
         <icls:amount>${net}</icls:amount>
       </incomeClassification>
     </invoiceDetails>`;
-  }).join('\n');
-  const vx = Object.entries(totals.vg).map(([cat,{net,vat}]) => {
-    const pct = (VAT.find(v=>v.code===Number(cat))?.rate||0)*100;
-    return `    <vatInfo>
-      <vatCategory>${cat}</vatCategory>
-      <vatPercent>${pct}</vatPercent>
-      <underlyingValue>${net.toFixed(2)}</underlyingValue>
-      <vatAmount>${vat.toFixed(2)}</vatAmount>
-    </vatInfo>`;
   }).join('\n');
   return `<?xml version="1.0" encoding="UTF-8"?>
 <InvoicesDoc xmlns="http://www.aade.gr/myDATA/invoice/v1.0"
@@ -239,6 +225,12 @@ function buildXML({ afm, branch, series, aa, type, pay, lines, totals }) {
       <invoiceType>${type}</invoiceType>
       <currency>EUR</currency>
     </invoiceHeader>
+    <paymentMethods>
+      <paymentMethodDetails>
+        <type>${pay}</type>
+        <amount>${totals.gross.toFixed(2)}</amount>
+      </paymentMethodDetails>
+    </paymentMethods>
 ${lx}
     <invoiceSummary>
       <totalNetValue>${totals.net.toFixed(2)}</totalNetValue>
@@ -249,13 +241,12 @@ ${lx}
       <totalOtherTaxesAmount>0.00</totalOtherTaxesAmount>
       <totalDeductionsAmount>0.00</totalDeductionsAmount>
       <totalGrossValue>${totals.gross.toFixed(2)}</totalGrossValue>
+      <incomeClassification>
+        <icls:classificationType>${iclsType}</icls:classificationType>
+        <icls:classificationCategory>${iclsCat}</icls:classificationCategory>
+        <icls:amount>${totals.net.toFixed(2)}</icls:amount>
+      </incomeClassification>
     </invoiceSummary>
-    <paymentMethods>
-      <paymentMethodDetails>
-        <type>${pay}</type>
-        <amount>${totals.gross.toFixed(2)}</amount>
-      </paymentMethodDetails>
-    </paymentMethods>
   </invoice>
 </InvoicesDoc>`;
 }
