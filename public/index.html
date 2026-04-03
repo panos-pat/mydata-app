@@ -178,7 +178,23 @@ const esc = s => (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g
 const fmt = n => n.toFixed(2).replace('.',',') + ' €';
 const nL = () => ({ id:Date.now()+Math.random(), desc:'', qty:'1', price:'', vat:1 });
 
-// Persist credentials in localStorage
+// Persist AA counter per series
+const AA_KEY = 'mydata_aa';
+function loadAA(series) {
+  try { const d = JSON.parse(localStorage.getItem(AA_KEY)) || {}; return d[series||'A'] || 1; } catch { return 1; }
+}
+function saveAA(series, val) {
+  try { const d = JSON.parse(localStorage.getItem(AA_KEY)) || {}; d[series||'A'] = val; localStorage.setItem(AA_KEY, JSON.stringify(d)); } catch {}
+}
+
+// Persist history
+const HIST_KEY = 'mydata_history';
+function loadHistory() {
+  try { return JSON.parse(localStorage.getItem(HIST_KEY)) || []; } catch { return []; }
+}
+function saveHistory(h) {
+  try { localStorage.setItem(HIST_KEY, JSON.stringify(h.slice(0,20))); } catch {}
+}
 const STORE_KEY = 'mydata_creds';
 function loadCreds() {
   try { return JSON.parse(localStorage.getItem(STORE_KEY)) || {}; } catch { return {}; }
@@ -260,8 +276,8 @@ function App() {
   const [lines, setLines] = useState([nL()]);
   const [loading, setLoading] = useState(false);
   const [resp, setResp] = useState(null);
-  const [history, setHistory] = useState([]);
-  const [aa, setAa] = useState(1);
+  const [history, setHistory] = useState(()=>loadHistory());
+  const [aa, setAa] = useState(()=>loadAA(saved.series||'A'));
   const [showXml, setShowXml] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [logs, setLogs] = useState([]);
@@ -338,8 +354,8 @@ function App() {
           log(`✓ MARK: ${mark||'N/A'} | UID: ${uid||'N/A'}`, 'ok');
           if (qrUrl) log(`QR: ${qrUrl}`, 'ok');
           setResp({ ok:true, uid, mark, qrUrl, auth, raw:text });
-          setHistory(h=>[{uid:uid||'—',mark:mark||'—',type:itype,gross:totals.gross,date:new Date().toLocaleTimeString('el'),aa},...h.slice(0,9)]);
-          setAa(n=>n+1);
+          setHistory(h=>{ const next = [{uid:uid||'—',mark:mark||'—',type:itype,gross:totals.gross,date:new Date().toLocaleTimeString('el'),aa},...h.slice(0,19)]; saveHistory(next); return next; });
+          setAa(n=>{ const next = n+1; saveAA(cr.series, next); return next; });
           // Reset lines
           setLines([nL()]);
         }
@@ -424,11 +440,11 @@ function App() {
             <div className="row2">
               <div className="field">
                 <div className="field-label">Σειρά</div>
-                <input className="field-input" value={cr.series} onChange={e=>setC('series',e.target.value)} placeholder="A"/>
+                <input className="field-input" value={cr.series} onChange={e=>{setC('series',e.target.value);setAa(loadAA(e.target.value));}} placeholder="A"/>
               </div>
               <div className="field">
                 <div className="field-label">ΑΑ</div>
-                <input className="field-input" type="number" value={aa} onChange={e=>setAa(Number(e.target.value))}/>
+                <input className="field-input" type="number" value={aa} onChange={e=>{const v=Number(e.target.value);setAa(v);saveAA(cr.series,v);}}/>
               </div>
             </div>
           </div>
