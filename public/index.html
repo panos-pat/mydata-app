@@ -202,6 +202,9 @@ function saveCreds(c) { try { localStorage.setItem(STORE_KEY,JSON.stringify(c));
 const DRAFT_KEY = 'mydata_drafts';
 function loadDrafts() { try { return JSON.parse(localStorage.getItem(DRAFT_KEY))||[]; } catch { return []; } }
 function saveDrafts(d) { try { localStorage.setItem(DRAFT_KEY,JSON.stringify(d.slice(0,50))); } catch{} }
+const SVC_KEY = 'mydata_services';
+function loadServices() { try { return JSON.parse(localStorage.getItem(SVC_KEY))||[]; } catch { return []; } }
+function saveServices(s) { try { localStorage.setItem(SVC_KEY,JSON.stringify(s)); } catch{} }
 
 function buildXML({ afm, branch, series, aa, type, pay, lines, totals, counterpart }) {
   const date = new Date().toISOString().slice(0,10);
@@ -295,7 +298,9 @@ function App() {
   const [cp, setCp] = useState({ name:'', afm:'', country:'GR', branch:'0' });
   const [histView, setHistView] = useState(null);
   const [drafts, setDrafts] = useState(()=>loadDrafts());
-  const [loadedDraftIdx, setLoadedDraftIdx] = useState(null); // track which draft is loaded
+  const [loadedDraftIdx, setLoadedDraftIdx] = useState(null);
+  const [services, setServices] = useState(()=>loadServices());
+  const [newSvc, setNewSvc] = useState(''); // track which draft is loaded
 
   useEffect(() => {
     if (resp?.ok && qrRef.current) {
@@ -399,6 +404,15 @@ function App() {
   const deleteDraft = (idx) => {
     setDrafts(d => { const next = d.filter((_,i) => i !== idx); saveDrafts(next); return next; });
     if (loadedDraftIdx === idx) setLoadedDraftIdx(null);
+  };
+
+  const addService = () => {
+    if (!newSvc.trim()) return;
+    setServices(s => { const next = [...s, newSvc.trim()]; saveServices(next); return next; });
+    setNewSvc('');
+  };
+  const removeService = (idx) => {
+    setServices(s => { const next = s.filter((_,i) => i !== idx); saveServices(next); return next; });
   };
 
   const setC = (k,v) => { const next={...cr,[k]:v}; setCr(next); saveCreds(next); };
@@ -522,6 +536,13 @@ function App() {
               return (
                 <div className="line-item" key={l.id}>
                   {lines.length>1 && <button className="line-del" onClick={()=>rem(l.id)}>×</button>}
+                  {services.length>0 && (
+                    <div style={{display:'flex',flexWrap:'wrap',gap:4,marginBottom:6}}>
+                      {services.map((svc,si)=>(
+                        <button key={si} onClick={()=>upd(l.id,'desc',svc)} style={{background:l.desc===svc?'var(--blue)':'var(--blue-bg)',color:l.desc===svc?'#fff':'var(--blue)',border:'none',fontSize:10,fontWeight:500,padding:'4px 8px',borderRadius:4,cursor:'pointer',fontFamily:'var(--sans)'}}>{svc}</button>
+                      ))}
+                    </div>
+                  )}
                   <input className="line-desc" placeholder={`Είδος / Υπηρεσία ${i+1}...`} value={l.desc} onChange={e=>upd(l.id,'desc',e.target.value)}/>
                   <div className="line-nums">
                     <div className="line-num-field"><div className="line-num-label">Ποσ.</div><input className="line-num-input" type="number" min="0" step="0.01" value={l.qty} onChange={e=>upd(l.id,'qty',e.target.value)}/></div>
@@ -650,6 +671,19 @@ function App() {
             <div className="field"><div className="field-label">Διεύθυνση</div><input className="field-input" placeholder="π.χ. Λεωφ. Αθηνών 10, Αθήνα 10441" value={cr.bizAddress||''} onChange={e=>setC('bizAddress',e.target.value)}/></div>
             <div className="field"><div className="field-label">Τηλέφωνο</div><input className="field-input" placeholder="π.χ. 210 1234567" value={cr.bizPhone||''} onChange={e=>setC('bizPhone',e.target.value)}/></div>
             <div style={{marginTop:8,padding:'10px 12px',background:'var(--blue-bg)',border:'1px solid var(--blue)',borderRadius:6,fontSize:11,color:'var(--blue)',lineHeight:1.7}}>Τα στοιχεία αποθηκεύονται τοπικά στον browser σου. Τα στοιχεία επιχείρησης εμφανίζονται μόνο στο PDF.</div>
+            <div style={{borderTop:'1px solid var(--border)',margin:'16px 0'}}/>
+            <div style={{fontSize:11,fontWeight:600,color:'var(--blue)',marginBottom:10,letterSpacing:'0.05em'}}>ΑΠΟΘΗΚΕΥΜΕΝΕΣ ΥΠΗΡΕΣΙΕΣ</div>
+            <div style={{fontSize:10,color:'var(--text-muted)',marginBottom:8}}>Προσθέστε περιγραφές υπηρεσιών για γρήγορη επιλογή</div>
+            {services.map((svc,i)=>(
+              <div key={i} style={{display:'flex',alignItems:'center',gap:8,marginBottom:6}}>
+                <div style={{flex:1,background:'var(--bg)',border:'1px solid var(--border)',borderRadius:4,padding:'7px 10px',fontSize:12}}>{svc}</div>
+                <button onClick={()=>removeService(i)} style={{background:'none',border:'1px solid var(--border)',color:'var(--red)',fontSize:12,width:28,height:28,borderRadius:4,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>✕</button>
+              </div>
+            ))}
+            <div style={{display:'flex',gap:8,marginTop:8}}>
+              <input className="field-input" placeholder="π.χ. Transfer Airport" value={newSvc} onChange={e=>setNewSvc(e.target.value)} onKeyDown={e=>e.key==='Enter'&&addService()} style={{flex:1}}/>
+              <button onClick={addService} style={{background:'var(--blue)',border:'none',color:'#fff',fontFamily:'var(--sans)',fontSize:12,fontWeight:600,padding:'9px 14px',borderRadius:6,cursor:'pointer',whiteSpace:'nowrap'}}>+ Προσθήκη</button>
+            </div>
             <button style={{marginTop:16,width:'100%',background:'var(--blue)',border:'none',color:'#fff',fontFamily:'var(--sans)',fontSize:14,fontWeight:700,padding:13,cursor:'pointer',borderRadius:6}} onClick={()=>setShowSettings(false)}>Αποθήκευση</button>
           </div>
         </div>
