@@ -394,8 +394,14 @@ function App() {
       target.mark ? `MARK: ${target.mark}` : '',
       target.qrUrl ? `🔗 ${target.qrUrl}` : '',
     ].filter(x => x !== '').join('\n').replace(/\n{3,}/g,'\n\n');
-    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
-    log('WhatsApp share', 'ok');
+    // Format phone: strip spaces/dashes, add country code if needed
+    let phone = (target.cp?.phone||'').replace(/[\s\-\(\)]/g,'');
+    if (phone && !phone.startsWith('+') && !phone.startsWith('00')) phone = '30' + phone;
+    if (phone && phone.startsWith('+')) phone = phone.slice(1);
+    if (phone && phone.startsWith('00')) phone = phone.slice(2);
+    const waUrl = phone ? `https://wa.me/${phone}?text=${encodeURIComponent(text)}` : `https://wa.me/?text=${encodeURIComponent(text)}`;
+    window.open(waUrl, '_blank');
+    log(phone ? `WhatsApp → ${phone}` : 'WhatsApp share', 'ok');
   };
 
   const histPDF = (idx) => { setLastInvoice(history[idx]); setTimeout(()=>downloadPDF(), 100); };
@@ -551,6 +557,7 @@ function App() {
                   <div className="field"><div className="field-label">ΑΦΜ Πελάτη</div><input className="field-input" placeholder="Προαιρετικό" value={cp.afm} onChange={e=>setCp(p=>({...p,afm:e.target.value}))}/></div>
                   <div className="field"><div className="field-label">Χώρα</div><input className="field-input" value={cp.country} onChange={e=>setCp(p=>({...p,country:e.target.value}))}/></div>
                 </div>
+                <div className="field"><div className="field-label">Τηλέφωνο (για WhatsApp)</div><input className="field-input" type="tel" placeholder="π.χ. 6971234567" value={cp.phone||''} onChange={e=>setCp(p=>({...p,phone:e.target.value}))}/></div>
               </div>
             )}
           </div>
