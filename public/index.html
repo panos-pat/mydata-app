@@ -430,8 +430,8 @@ function App() {
     setItype(d.itype || '11.1');
     setPay(d.pay || 2);
     setLines(d.lines.map(l => ({ ...l, id: Date.now()+Math.random() })));
-    if (d.cp) { setCp(d.cp); if (d.cp.name || d.cp.afm) setShowCp(true); }
-    if (d.series) { setC('series', d.series); setAa(d.aa || loadAA(d.series)); }
+    if (d.cp) { setCp(d.cp); if (d.cp.name || d.cp.afm || d.cp.phone) setShowCp(true); }
+    // Don't override AA - keep current sequential number
     setLoadedDraftIdx(idx);
     log(`Φορτώθηκε πρόχειρο: ${d.label}`, 'ok');
   };
