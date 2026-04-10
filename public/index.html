@@ -202,11 +202,12 @@ function buildXML({ afm, branch, series, aa, type, pay, lines, totals, counterpa
   const iclsType='E3_561_003', iclsCat='category1_3';
   let cpXml = '';
   if (counterpart && counterpart.afm) {
+    const cpCountry = counterpart.country || 'GR';
     cpXml = '    <counterpart>\n';
     cpXml += `      <vatNumber>${esc(counterpart.afm)}</vatNumber>\n`;
-    cpXml += `      <country>${esc(counterpart.country||'GR')}</country>\n`;
-    if (counterpart.branch && counterpart.branch !== '0') cpXml += `      <branch>${esc(counterpart.branch)}</branch>\n`;
-    if (counterpart.name) cpXml += `      <name>${esc(counterpart.name)}</name>\n`;
+    cpXml += `      <country>${esc(cpCountry)}</country>\n`;
+    cpXml += `      <branch>${esc(counterpart.branch||'0')}</branch>\n`;
+    if (counterpart.name && cpCountry !== 'GR') cpXml += `      <name>${esc(counterpart.name)}</name>\n`;
     cpXml += '    </counterpart>\n';
   }
   const lx = lines.map((l,i) => {
