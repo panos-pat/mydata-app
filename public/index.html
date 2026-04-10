@@ -123,6 +123,9 @@
   .btn-pdf:disabled { border-color:var(--border); color:var(--text-muted); cursor:not-allowed; }
   .btn-wa { background:#25D366; border:none; color:#fff; font-family:var(--sans); font-size:11px; font-weight:700; padding:12px; cursor:pointer; border-radius:6px; display:flex; align-items:center; gap:5px; }
   .btn-wa:disabled { background:var(--border); color:var(--text-muted); cursor:not-allowed; }
+  .btn-draft { background:#fff; border:1px solid #bf8700; color:#bf8700; font-family:var(--sans); font-size:13px; padding:12px; cursor:pointer; border-radius:6px; }
+  .btn-draft:hover { background:#fff8c5; }
+  .btn-draft:disabled { border-color:var(--border); color:var(--text-muted); cursor:not-allowed; }
 
   /* Drawer & Modal */
   .drawer-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:30; }
@@ -196,6 +199,9 @@ function saveHistory(h) { try { localStorage.setItem(HIST_KEY,JSON.stringify(h.s
 const STORE_KEY = 'mydata_creds';
 function loadCreds() { try { return JSON.parse(localStorage.getItem(STORE_KEY))||{}; } catch { return {}; } }
 function saveCreds(c) { try { localStorage.setItem(STORE_KEY,JSON.stringify(c)); } catch{} }
+const DRAFT_KEY = 'mydata_drafts';
+function loadDrafts() { try { return JSON.parse(localStorage.getItem(DRAFT_KEY))||[]; } catch { return []; } }
+function saveDrafts(d) { try { localStorage.setItem(DRAFT_KEY,JSON.stringify(d.slice(0,50))); } catch{} }
 
 function buildXML({ afm, branch, series, aa, type, pay, lines, totals, counterpart }) {
   const date = new Date().toISOString().slice(0,10);
@@ -287,7 +293,9 @@ function App() {
   const qrRef = useRef(null);
   const [showCp, setShowCp] = useState(false);
   const [cp, setCp] = useState({ name:'', afm:'', country:'GR', branch:'0' });
-  const [histView, setHistView] = useState(null); // index of history item being viewed
+  const [histView, setHistView] = useState(null);
+  const [drafts, setDrafts] = useState(()=>loadDrafts());
+  const [loadedDraftIdx, setLoadedDraftIdx] = useState(null); // track which draft is loaded
 
   useEffect(() => {
     if (resp?.ok && qrRef.current) {
@@ -359,6 +367,40 @@ function App() {
   const histPDF = (idx) => { setLastInvoice(history[idx]); setTimeout(()=>downloadPDF(), 100); };
   const histWA = (idx) => { shareWhatsApp(history[idx]); };
 
+  // ── Drafts ──
+  const saveDraft = () => {
+    const draft = {
+      id: Date.now(),
+      savedAt: new Date().toLocaleString('el'),
+      itype, pay, lines: [...lines], series: cr.series, aa,
+      cp: { ...cp },
+      label: lines[0]?.desc || 'Πρόχειρο',
+      totalGross: lines.reduce((sum,l) => {
+        const vc = VAT.find(v=>v.code===Number(l.vat));
+        return sum + ((parseFloat(l.qty)||0)*(parseFloat(l.price)||0))*(1+(vc?.rate||0));
+      }, 0),
+    };
+    setDrafts(d => { const next = [draft, ...d.slice(0,49)]; saveDrafts(next); return next; });
+    log('Πρόχειρο αποθηκεύτηκε', 'ok');
+  };
+
+  const loadDraft = (idx) => {
+    const d = drafts[idx];
+    if (!d) return;
+    setItype(d.itype || '11.1');
+    setPay(d.pay || 2);
+    setLines(d.lines.map(l => ({ ...l, id: Date.now()+Math.random() })));
+    if (d.cp) { setCp(d.cp); if (d.cp.name || d.cp.afm) setShowCp(true); }
+    if (d.series) { setC('series', d.series); setAa(d.aa || loadAA(d.series)); }
+    setLoadedDraftIdx(idx);
+    log(`Φορτώθηκε πρόχειρο: ${d.label}`, 'ok');
+  };
+
+  const deleteDraft = (idx) => {
+    setDrafts(d => { const next = d.filter((_,i) => i !== idx); saveDrafts(next); return next; });
+    if (loadedDraftIdx === idx) setLoadedDraftIdx(null);
+  };
+
   const setC = (k,v) => { const next={...cr,[k]:v}; setCr(next); saveCreds(next); };
   const totals = useMemo(() => {
     let net=0,vat=0; const vg={};
@@ -391,6 +433,8 @@ function App() {
           setHistory(h=>{ const next=[fullInv,...h.slice(0,99)]; saveHistory(next); return next; });
           setAa(n=>{ const next=n+1; saveAA(cr.series,next); return next; });
           setLines([nL()]);
+          // Auto-delete draft if loaded from drafts
+          if (loadedDraftIdx !== null) { deleteDraft(loadedDraftIdx); setLoadedDraftIdx(null); }
         }
       } else { log(`✗ HTTP ${r.status}`,'err'); setResp({ok:false,raw:text,status:r.status}); }
     } catch(e) { log(`✗ ${e.message}`,'err'); setResp({ok:false,raw:e.message,status:'ERROR'}); }
@@ -502,6 +546,33 @@ function App() {
 
         {logs.length>0 && (<div className="card" style={{marginTop:12}}><div className="card-head"><div className="card-num">LOG</div><div className="card-title">Αρχείο</div></div><div className="log-wrap">{logs.map((l,i)=>(<div className="log-line" key={i}><span className="log-t">{l.t}</span><span className={l.type==='ok'?'log-ok':l.type==='err'?'log-er':''}>{l.msg}</span></div>))}</div></div>)}
 
+        {/* Drafts */}
+        {drafts.length>0 && (
+          <div className="card" style={{marginTop:12}}>
+            <div className="card-head" style={{background:'#fff8c5'}}>
+              <div className="card-num" style={{background:'#fff8c5',color:'#bf8700'}}>💾</div>
+              <div className="card-title">Πρόχειρα ({drafts.length})</div>
+            </div>
+            <div style={{padding:'8px 12px'}}>
+              {drafts.map((d,i)=>(
+                <div key={d.id||i} style={{padding:'8px 4px',borderBottom:'1px solid #eef0f2',fontSize:11}}>
+                  <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                    <div>
+                      <div style={{fontWeight:600,color:'var(--text)'}}>{d.label||'Πρόχειρο'}</div>
+                      <div style={{color:'var(--text-muted)',fontSize:10}}>{d.savedAt} · {fmt(d.totalGross||0)}</div>
+                    </div>
+                    <div style={{display:'flex',gap:6}}>
+                      <button onClick={()=>loadDraft(i)} style={{background:'var(--blue)',border:'none',color:'#fff',fontFamily:'var(--sans)',fontSize:10,fontWeight:600,padding:'5px 10px',borderRadius:4,cursor:'pointer'}}>Φόρτωση</button>
+                      <button onClick={()=>deleteDraft(i)} style={{background:'none',border:'1px solid var(--border)',color:'var(--red)',fontFamily:'var(--sans)',fontSize:10,padding:'5px 8px',borderRadius:4,cursor:'pointer'}}>✕</button>
+                    </div>
+                  </div>
+                  {loadedDraftIdx===i && <div style={{fontSize:9,color:'var(--green)',marginTop:3,fontWeight:600}}>▶ Φορτωμένο — πάτα "Αποστολή ΑΑΔΕ"</div>}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {history.length>0 && (<div className="card" style={{marginTop:12}}>
           <div className="card-head"><div className="card-num">ΙΣΤΟΡΙΚΟ</div><div className="card-title">Εκδόσεις ({history.length})</div></div>
           <div style={{padding:'8px 12px'}}>
@@ -554,6 +625,7 @@ function App() {
         <button className="btn-xml" onClick={()=>setShowXml(true)}>XML</button>
         <button className="btn-pdf" onClick={downloadPDF} disabled={!lastInvoice}>PDF</button>
         <button className="btn-wa" onClick={shareWhatsApp} disabled={!lastInvoice}><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.625.846 5.059 2.284 7.034L.789 23.492a.5.5 0 00.613.613l4.458-1.495A11.952 11.952 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-2.319 0-4.476-.678-6.305-1.834l-.44-.282-3.28 1.1 1.1-3.28-.282-.44A9.956 9.956 0 012 12C2 6.486 6.486 2 12 2s10 4.486 10 10-4.486 10-10 10z"/></svg>WA</button>
+        <button className="btn-draft" onClick={saveDraft} disabled={!lines.some(l=>l.desc)}>💾</button>
         <button className="btn-send" onClick={submit} disabled={!canSubmit||loading}>{loading?<><span className="spinner"/>Αποστολή...</>:'Αποστολή ΑΑΔΕ'}</button>
       </div>
 
