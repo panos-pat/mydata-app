@@ -12,6 +12,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.development.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.development.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
@@ -294,147 +295,141 @@ function App() {
     setLogs(p=>[{t,msg,type},...p.slice(0,14)]);
   };
 
-  // ── PDF generation ──
-  const generatePDF = (invoiceData) => {
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF({ unit:'mm', format:'a4' });
-    const inv = invoiceData || lastInvoice;
-    if (!inv) return null;
+  // ── PDF generation via html2canvas (supports Greek) ──
+  const downloadPDF = async () => {
+    const inv = lastInvoice;
+    if (!inv) return;
 
-    const W = 210, margin = 16;
-    const pw = W - margin*2; // printable width
-    let y = 18;
+    const fmtE = n => n.toFixed(2).replace('.',',') + ' €';
 
-    // Helper
-    const ln = (x1,y1,x2,y2,col='#2a2f2c') => { doc.setDrawColor(col); doc.setLineWidth(0.3); doc.line(x1,y1,x2,y2); };
-    const fmtE = n => n.toFixed(2).replace('.',',') + ' \u20AC';
+    // Build HTML receipt
+    const vatRows = Object.entries(inv.totals.vg).map(([cat,{net,vat}]) => {
+      const vi = VAT.find(v=>v.code===Number(cat));
+      return `<tr><td style="color:#6b7a6e;font-size:11px;padding:3px 0;">ΦΠΑ ${vi?.label} επί ${fmtE(net)}</td><td style="text-align:right;font-size:11px;padding:3px 0;">${fmtE(vat)}</td></tr>`;
+    }).join('');
 
-    // ── Header ──
-    doc.setFillColor(13,15,14);
-    doc.rect(0, 0, W, 42, 'F');
-    doc.setFillColor(0,232,122);
-    doc.rect(margin, y, 28, 7, 'F');
-    doc.setTextColor(0,0,0);
-    doc.setFontSize(9); doc.setFont('helvetica','bold');
-    doc.text('myDATA', margin+2, y+5);
-    doc.setTextColor(232,237,233);
-    doc.setFontSize(14); doc.setFont('helvetica','bold');
-    doc.text(inv.typeLbl, margin+32, y+5);
-    
-    y += 14;
-    doc.setFontSize(8); doc.setFont('helvetica','normal');
-    doc.setTextColor(107,122,110);
-    doc.text(`\u0391\u03A6\u039C: ${inv.afm}  |  \u03A0\u03B1\u03C1\u03AC\u03C1\u03C4\u03B7\u03BC\u03B1: ${inv.branch}`, margin, y);
-    doc.text(`${inv.series}-${inv.aa}  |  ${inv.date}`, W - margin, y, { align:'right' });
-    y += 6;
-    doc.text(`\u03A0\u03BB\u03B7\u03C1\u03C9\u03BC\u03AE: ${inv.payLbl}  |  ${inv.env === 'prod' ? '\u03A0\u0391\u03A1\u0391\u0393\u03A9\u0393\u0397' : 'TEST'}`, margin, y);
-    
-    y = 48;
-
-    // ── Lines table ──
-    doc.setTextColor(107,122,110);
-    doc.setFontSize(7); doc.setFont('helvetica','bold');
-    const cols = [margin, margin+8, margin+pw*0.55, margin+pw*0.68, margin+pw*0.78, margin+pw*0.88];
-    doc.text('#', cols[0], y);
-    doc.text('\u03A0\u03B5\u03C1\u03B9\u03B3\u03C1\u03B1\u03C6\u03AE', cols[1], y);
-    doc.text('\u03A0\u03BF\u03C3.', cols[2], y);
-    doc.text('\u03A4\u03B9\u03BC\u03AE', cols[3], y);
-    doc.text('\u03A6\u03A0\u0391', cols[4], y);
-    doc.text('\u03A3\u03CD\u03BD\u03BF\u03BB\u03BF', cols[5], y);
-    y += 2;
-    ln(margin, y, W-margin, y, '#00e87a');
-    y += 5;
-
-    doc.setFont('helvetica','normal');
-    doc.setTextColor(50,55,52);
-    doc.setFontSize(8);
-    inv.lines.forEach((l, i) => {
+    const lineRows = inv.lines.map((l,i) => {
       const vc = VAT.find(v=>v.code===Number(l.vat));
       const net = (parseFloat(l.qty)||0)*(parseFloat(l.price)||0);
       const vatAmt = net*(vc?.rate||0);
-      const gross = net + vatAmt;
-      doc.text(`${i+1}`, cols[0], y);
-      // Truncate long descriptions
-      const desc = l.desc.length > 40 ? l.desc.substring(0,37) + '...' : l.desc;
-      doc.text(desc, cols[1], y);
-      doc.text(`${parseFloat(l.qty)||0}`, cols[2], y);
-      doc.text(fmtE(parseFloat(l.price)||0), cols[3], y);
-      doc.text(vc?.label || '24%', cols[4], y);
-      doc.text(fmtE(gross), cols[5], y);
-      y += 6;
-    });
+      return `<tr style="border-bottom:1px solid #2a2f2c;">
+        <td style="padding:6px 4px;color:#6b7a6e;">${i+1}</td>
+        <td style="padding:6px 4px;">${l.desc}</td>
+        <td style="padding:6px 4px;text-align:center;">${parseFloat(l.qty)||0}</td>
+        <td style="padding:6px 4px;text-align:right;">${fmtE(parseFloat(l.price)||0)}</td>
+        <td style="padding:6px 4px;text-align:center;color:#6b7a6e;">${vc?.label||'24%'}</td>
+        <td style="padding:6px 4px;text-align:right;font-weight:600;">${fmtE(net+vatAmt)}</td>
+      </tr>`;
+    }).join('');
 
-    y += 2;
-    ln(margin, y, W-margin, y);
-    y += 6;
+    const html = `
+      <div style="width:595px;min-height:842px;background:#0d0f0e;color:#e8ede9;font-family:'IBM Plex Mono',monospace;padding:0;position:relative;">
+        <!-- Header -->
+        <div style="background:#141716;padding:24px 32px;border-bottom:2px solid #00e87a;">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div style="display:flex;align-items:center;gap:14px;">
+              <div style="background:#00e87a;color:#000;font-family:'IBM Plex Sans Condensed',sans-serif;font-weight:700;font-size:11px;letter-spacing:0.08em;padding:4px 10px;">myDATA</div>
+              <div style="font-family:'IBM Plex Sans Condensed',sans-serif;font-size:16px;font-weight:700;">${inv.typeLbl}</div>
+            </div>
+            <div style="text-align:right;font-size:11px;color:#6b7a6e;">
+              <div>${inv.env==='prod'?'ΠΑΡΑΓΩΓΗ':'TEST'}</div>
+            </div>
+          </div>
+        </div>
 
-    // ── Summary ──
-    const sumX = margin + pw * 0.6;
-    doc.setFontSize(8); doc.setFont('helvetica','normal'); doc.setTextColor(107,122,110);
-    doc.text('\u039A\u03B1\u03B8\u03B1\u03C1\u03AE \u0391\u03BE\u03AF\u03B1:', sumX, y);
-    doc.setTextColor(50,55,52); doc.text(fmtE(inv.totals.net), W-margin, y, {align:'right'});
-    y += 5;
+        <!-- Info -->
+        <div style="padding:20px 32px;display:flex;justify-content:space-between;border-bottom:1px solid #2a2f2c;font-size:12px;">
+          <div>
+            <div style="color:#6b7a6e;font-size:9px;letter-spacing:0.08em;margin-bottom:4px;">ΕΚΔΟΤΗΣ</div>
+            <div>ΑΦΜ: ${inv.afm}</div>
+            <div style="color:#6b7a6e;">Παράρτημα: ${inv.branch}</div>
+          </div>
+          <div style="text-align:right;">
+            <div style="color:#6b7a6e;font-size:9px;letter-spacing:0.08em;margin-bottom:4px;">ΠΑΡΑΣΤΑΤΙΚΟ</div>
+            <div style="color:#00e87a;font-weight:600;">${inv.series}-${inv.aa}</div>
+            <div style="color:#6b7a6e;">${inv.date}</div>
+          </div>
+        </div>
 
-    // VAT breakdown
-    Object.entries(inv.totals.vg).forEach(([cat,{net,vat}]) => {
-      const vi = VAT.find(v=>v.code===Number(cat));
-      doc.setTextColor(107,122,110);
-      doc.text(`\u03A6\u03A0\u0391 ${vi?.label} \u03B5\u03C0\u03AF ${fmtE(net)}:`, sumX, y);
-      doc.setTextColor(50,55,52); doc.text(fmtE(vat), W-margin, y, {align:'right'});
-      y += 5;
-    });
+        <!-- Payment -->
+        <div style="padding:10px 32px;border-bottom:1px solid #2a2f2c;font-size:11px;color:#6b7a6e;">
+          Πληρωμή: <span style="color:#e8ede9;">${inv.payLbl}</span>
+        </div>
 
-    doc.setTextColor(107,122,110);
-    doc.text('\u03A3\u03CD\u03BD\u03BF\u03BB\u03BF \u03A6\u03A0\u0391:', sumX, y);
-    doc.setTextColor(50,55,52); doc.text(fmtE(inv.totals.vat), W-margin, y, {align:'right'});
-    y += 3;
-    ln(sumX, y, W-margin, y, '#00e87a');
-    y += 6;
+        <!-- Lines table -->
+        <div style="padding:16px 32px;">
+          <table style="width:100%;border-collapse:collapse;font-size:12px;">
+            <thead>
+              <tr style="border-bottom:2px solid #00e87a;">
+                <th style="text-align:left;padding:6px 4px;color:#6b7a6e;font-size:9px;font-weight:600;letter-spacing:0.08em;">#</th>
+                <th style="text-align:left;padding:6px 4px;color:#6b7a6e;font-size:9px;font-weight:600;letter-spacing:0.08em;">ΠΕΡΙΓΡΑΦΗ</th>
+                <th style="text-align:center;padding:6px 4px;color:#6b7a6e;font-size:9px;font-weight:600;letter-spacing:0.08em;">ΠΟΣ.</th>
+                <th style="text-align:right;padding:6px 4px;color:#6b7a6e;font-size:9px;font-weight:600;letter-spacing:0.08em;">ΤΙΜΗ</th>
+                <th style="text-align:center;padding:6px 4px;color:#6b7a6e;font-size:9px;font-weight:600;letter-spacing:0.08em;">ΦΠΑ</th>
+                <th style="text-align:right;padding:6px 4px;color:#6b7a6e;font-size:9px;font-weight:600;letter-spacing:0.08em;">ΣΥΝΟΛΟ</th>
+              </tr>
+            </thead>
+            <tbody>${lineRows}</tbody>
+          </table>
+        </div>
 
-    doc.setFontSize(11); doc.setFont('helvetica','bold'); doc.setTextColor(0,232,122);
-    doc.text('\u03A3\u03A5\u039D\u039F\u039B\u039F:', sumX, y);
-    doc.text(fmtE(inv.totals.gross), W-margin, y, {align:'right'});
-    y += 10;
+        <!-- Summary -->
+        <div style="padding:16px 32px;">
+          <table style="width:280px;margin-left:auto;border-collapse:collapse;font-size:12px;">
+            <tr><td style="color:#6b7a6e;padding:4px 0;">Καθαρή Αξία</td><td style="text-align:right;padding:4px 0;">${fmtE(inv.totals.net)}</td></tr>
+            ${vatRows}
+            <tr><td style="color:#6b7a6e;padding:4px 0;">Σύνολο ΦΠΑ</td><td style="text-align:right;padding:4px 0;">${fmtE(inv.totals.vat)}</td></tr>
+            <tr style="border-top:2px solid #00e87a;">
+              <td style="color:#00e87a;font-weight:700;font-size:14px;padding:10px 0;">ΣΥΝΟΛΟ</td>
+              <td style="text-align:right;color:#00e87a;font-weight:700;font-size:14px;padding:10px 0;">${fmtE(inv.totals.gross)}</td>
+            </tr>
+          </table>
+        </div>
 
-    // ── MARK / UID ──
-    if (inv.mark) {
-      doc.setFillColor(0,232,122,24);
-      doc.rect(margin, y-4, pw, inv.uid ? 18 : 10, 'F');
-      doc.setFontSize(7); doc.setFont('helvetica','bold'); doc.setTextColor(0,232,122);
-      doc.text('MARK', margin+3, y);
-      doc.setFontSize(10); doc.setTextColor(0,232,122);
-      doc.text(inv.mark, margin+20, y);
-      y += 6;
-      if (inv.uid) {
-        doc.setFontSize(7); doc.setFont('helvetica','bold'); doc.setTextColor(107,122,110);
-        doc.text('UID', margin+3, y);
-        doc.setFontSize(7); doc.setFont('helvetica','normal');
-        doc.text(inv.uid, margin+20, y);
-        y += 6;
-      }
-      if (inv.auth) {
-        doc.setFontSize(7); doc.setFont('helvetica','bold'); doc.setTextColor(107,122,110);
-        doc.text('AUTH', margin+3, y);
-        doc.setFontSize(7); doc.setFont('helvetica','normal');
-        doc.text(inv.auth, margin+20, y);
-        y += 6;
-      }
+        ${inv.mark ? `
+        <!-- MARK -->
+        <div style="margin:8px 32px;padding:14px 16px;background:#00e87a18;border:1px solid #00e87a;">
+          <div style="display:flex;gap:16px;align-items:baseline;">
+            <div style="font-size:9px;color:#00e87a;font-weight:600;letter-spacing:0.08em;">MARK</div>
+            <div style="font-size:14px;color:#00e87a;font-weight:600;">${inv.mark}</div>
+          </div>
+          ${inv.uid ? `<div style="margin-top:6px;font-size:9px;color:#6b7a6e;">UID: <span style="color:#e8ede9;">${inv.uid}</span></div>` : ''}
+          ${inv.auth ? `<div style="margin-top:4px;font-size:9px;color:#6b7a6e;">AUTH: <span style="color:#e8ede9;">${inv.auth}</span></div>` : ''}
+        </div>` : ''}
+
+        <!-- Footer -->
+        <div style="position:absolute;bottom:20px;left:0;right:0;text-align:center;font-size:9px;color:#3d4a3f;">
+          Εκδόθηκε μέσω myDATA App  |  ${new Date().toLocaleString('el')}
+        </div>
+      </div>`;
+
+    // Render off-screen
+    const container = document.createElement('div');
+    container.style.cssText = 'position:fixed;left:-9999px;top:0;z-index:-1;';
+    container.innerHTML = html;
+    document.body.appendChild(container);
+
+    try {
+      const canvas = await html2canvas(container.firstElementChild, {
+        scale: 2,
+        backgroundColor: '#0d0f0e',
+        useCORS: true,
+        logging: false,
+      });
+      const imgData = canvas.toDataURL('image/png');
+      const { jsPDF } = window.jspdf;
+      const pdf = new jsPDF({ unit:'mm', format:'a4' });
+      const pdfW = 210, pdfH = 297;
+      const imgW = pdfW;
+      const imgH = (canvas.height * pdfW) / canvas.width;
+      pdf.addImage(imgData, 'PNG', 0, 0, imgW, Math.min(imgH, pdfH));
+      pdf.save(`${inv.series}-${inv.aa}_${inv.date}.pdf`);
+      log('↓ PDF αποθηκεύτηκε', 'ok');
+    } catch(e) {
+      log('✗ PDF error: ' + e.message, 'err');
+    } finally {
+      document.body.removeChild(container);
     }
-
-    // ── Footer ──
-    y = 280;
-    doc.setFontSize(6); doc.setFont('helvetica','normal'); doc.setTextColor(150,160,155);
-    doc.text(`\u0395\u03BA\u03B4\u03CC\u03B8\u03B7\u03BA\u03B5 \u03BC\u03AD\u03C3\u03C9 myDATA App  |  ${new Date().toLocaleString('el')}`, W/2, y, {align:'center'});
-
-    return doc;
-  };
-
-  const downloadPDF = () => {
-    const doc = generatePDF();
-    if (!doc) return;
-    const inv = lastInvoice;
-    doc.save(`${inv.series}-${inv.aa}_${inv.date}.pdf`);
-    log('\u2193 PDF \u03B1\u03C0\u03BF\u03B8\u03B7\u03BA\u03B5\u03CD\u03C4\u03B7\u03BA\u03B5', 'ok');
   };
 
   const shareWhatsApp = () => {
