@@ -364,7 +364,36 @@ function App() {
 
   const shareWhatsApp = (inv) => {
     const target = inv || lastInvoice; if (!target) return;
-    const text = [target.biz?.name||'',`✅ ${target.typeLbl}`,`${target.series}-${target.aa} | ${target.date}`,`ΑΦΜ: ${target.afm}`,target.cp?.name?`Πελάτης: ${target.cp.name}`:'',`Σύνολο: ${fmt(target.totals.gross)}`,target.mark?`MARK: ${target.mark}`:'',target.qrUrl?`QR: ${target.qrUrl}`:''].filter(Boolean).join('\n');
+    const fmtE = n => n.toFixed(2).replace('.',',') + ' €';
+    const linesTxt = (target.lines||[]).map((l,i) => {
+      const vc = VAT.find(v=>v.code===Number(l.vat));
+      const net = (parseFloat(l.qty)||0)*(parseFloat(l.price)||0);
+      const gross = net*(1+(vc?.rate||0));
+      return `  ${i+1}. ${l.desc} — ${parseFloat(l.qty)||0} x ${fmtE(parseFloat(l.price)||0)} = ${fmtE(gross)}`;
+    }).join('\n');
+    const text = [
+      target.biz?.name ? `*${target.biz.name}*` : '',
+      target.biz?.title || '',
+      target.biz?.activity || '',
+      target.biz?.address || '',
+      target.biz?.phone ? `📞 ${target.biz.phone}` : '',
+      '',
+      `📄 ${target.typeLbl}`,
+      `${target.series}-${target.aa} | ${target.date}`,
+      `ΑΦΜ Εκδότη: ${target.afm}`,
+      target.cp?.name ? `Πελάτης: ${target.cp.name}` : '',
+      target.cp?.afm ? `ΑΦΜ Πελάτη: ${target.cp.afm}` : '',
+      `Πληρωμή: ${target.payLbl||''}`,
+      '',
+      linesTxt,
+      '',
+      `Καθαρή: ${fmtE(target.totals.net)}`,
+      `ΦΠΑ: ${fmtE(target.totals.vat)}`,
+      `*Σύνολο: ${fmtE(target.totals.gross)}*`,
+      '',
+      target.mark ? `MARK: ${target.mark}` : '',
+      target.qrUrl ? `🔗 ${target.qrUrl}` : '',
+    ].filter(x => x !== '').join('\n').replace(/\n{3,}/g,'\n\n');
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
     log('WhatsApp share', 'ok');
   };
