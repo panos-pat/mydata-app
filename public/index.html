@@ -294,16 +294,19 @@ function App() {
 
   // Render QR code in response card when resp changes
   useEffect(() => {
-    if (resp?.ok && resp.qrUrl && qrRef.current) {
+    if (resp?.ok && qrRef.current) {
       qrRef.current.innerHTML = '';
-      new QRCode(qrRef.current, {
-        text: resp.qrUrl,
-        width: 100,
-        height: 100,
-        colorDark: '#00e87a',
-        colorLight: '#141716',
-        correctLevel: QRCode.CorrectLevel.M,
-      });
+      const qrData = resp.qrUrl || (resp.mark ? `https://mydata.aade.gr/invoice/${resp.mark}` : null);
+      if (qrData) {
+        new QRCode(qrRef.current, {
+          text: qrData,
+          width: 120,
+          height: 120,
+          colorDark: '#00e87a',
+          colorLight: '#141716',
+          correctLevel: QRCode.CorrectLevel.M,
+        });
+      }
     }
   }, [resp]);
 
@@ -415,7 +418,7 @@ function App() {
             ${inv.auth ? `<div style="margin-top:4px;font-size:9px;color:#6b7a6e;">AUTH: <span style="color:#e8ede9;">${inv.auth}</span></div>` : ''}
             ${inv.qrUrl ? `<div style="margin-top:4px;font-size:8px;color:#6b7a6e;word-break:break-all;">${inv.qrUrl}</div>` : ''}
           </div>
-          ${inv.qrUrl ? `<div id="pdf-qr" style="margin-left:12px;flex-shrink:0;"></div>` : ''}
+          <div id="pdf-qr" style="margin-left:12px;flex-shrink:0;"></div>
         </div>` : ''}
 
         <!-- Footer -->
@@ -430,11 +433,12 @@ function App() {
     container.innerHTML = html;
     document.body.appendChild(container);
 
-    // Generate QR code if qrUrl exists
+    // Generate QR code — use qrUrl or fallback to MARK-based URL
     const qrEl = container.querySelector('#pdf-qr');
-    if (qrEl && inv.qrUrl) {
+    const qrData = inv.qrUrl || `https://mydata.aade.gr/invoice/${inv.mark}`;
+    if (qrEl && qrData) {
       new QRCode(qrEl, {
-        text: inv.qrUrl,
+        text: qrData,
         width: 90,
         height: 90,
         colorDark: '#00e87a',
@@ -442,23 +446,23 @@ function App() {
         correctLevel: QRCode.CorrectLevel.M,
       });
       // Wait for QR image to render
-      await new Promise(r => setTimeout(r, 100));
+      await new Promise(r => setTimeout(r, 150));
     }
 
     try {
       const canvas = await html2canvas(container.firstElementChild, {
-        scale: 2,
+        scale: 1.5,
         backgroundColor: '#0d0f0e',
         useCORS: true,
         logging: false,
       });
-      const imgData = canvas.toDataURL('image/png');
+      const imgData = canvas.toDataURL('image/jpeg', 0.75);
       const { jsPDF } = window.jspdf;
-      const pdf = new jsPDF({ unit:'mm', format:'a4' });
+      const pdf = new jsPDF({ unit:'mm', format:'a4', compress: true });
       const pdfW = 210, pdfH = 297;
       const imgW = pdfW;
       const imgH = (canvas.height * pdfW) / canvas.width;
-      pdf.addImage(imgData, 'PNG', 0, 0, imgW, Math.min(imgH, pdfH));
+      pdf.addImage(imgData, 'JPEG', 0, 0, imgW, Math.min(imgH, pdfH), undefined, 'FAST');
       pdf.save(`${inv.series}-${inv.aa}_${inv.date}.pdf`);
       log('↓ PDF αποθηκεύτηκε', 'ok');
     } catch(e) {
@@ -621,7 +625,7 @@ function App() {
                   {resp.uid && <><div style={{fontSize:9,color:'var(--text-muted)',marginTop:8}}>UID</div><div className="uid">{resp.uid}</div></>}
                   {resp.auth && <><div style={{fontSize:9,color:'var(--text-muted)',marginTop:8}}>Auth. Code</div><div className="uid">{resp.auth}</div></>}
                   {resp.qrUrl && <><div style={{fontSize:9,color:'var(--text-muted)',marginTop:8}}>QR URL</div><div className="uid"><a href={resp.qrUrl} target="_blank" rel="noopener" style={{color:'var(--accent)'}}>{resp.qrUrl}</a></div></>}
-                  {resp.qrUrl && <div ref={qrRef} style={{marginTop:12,display:'flex',justifyContent:'center'}}/>}
+                  <div ref={qrRef} style={{marginTop:12,display:'flex',justifyContent:'center'}}/>
                   <div style={{display:'flex',gap:8,marginTop:14}}>
                     <button className="btn-pdf" onClick={downloadPDF} style={{padding:'10px 16px',fontSize:12}}>↓ PDF</button>
                     <button className="btn-wa" onClick={shareWhatsApp} style={{padding:'10px 16px',fontSize:12}}>
