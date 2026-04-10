@@ -277,7 +277,7 @@ ${lx}
 
 function App() {
   const saved = loadCreds();
-  const [cr, setCr] = useState({ user:saved.user||'', key:saved.key||'', afm:saved.afm||'', branch:saved.branch||'0', series:saved.series||'A' });
+  const [cr, setCr] = useState({ user:saved.user||'', key:saved.key||'', afm:saved.afm||'', branch:saved.branch||'0', series:saved.series||'A', bizName:saved.bizName||'', bizTitle:saved.bizTitle||'', bizActivity:saved.bizActivity||'', bizAddress:saved.bizAddress||'', bizPhone:saved.bizPhone||'' });
   const [env, setEnv] = useState('test');
   const [itype, setItype] = useState('11.1');
   const [pay, setPay] = useState(2);
