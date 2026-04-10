@@ -3,10 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="theme-color" content="#0d0f0e">
+<meta name="theme-color" content="#003476">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="myDATA">
 <title>myDATA — Αποδείξεις</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.development.js"></script>
@@ -15,154 +15,156 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@400;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
-    --bg:#0d0f0e; --surface:#141716; --border:#2a2f2c;
-    --accent:#00e87a; --accent-dim:#00e87a18; --accent2:#00b85f;
-    --red:#ff4545; --red-dim:#ff454518;
-    --text:#e8ede9; --text-muted:#6b7a6e; --text-dim:#3d4a3f;
-    --mono:'IBM Plex Mono',monospace; --sans:'IBM Plex Sans Condensed',sans-serif;
+    --bg:#f0f2f5; --surface:#ffffff; --border:#d4d8de;
+    --blue:#003476; --blue-light:#0054a6; --blue-bg:#e8eef6; --blue-dim:#00347610;
+    --green:#1a7f37; --green-bg:#dafbe1; --green-border:#1a7f3740;
+    --red:#cf222e; --red-bg:#ffebe9; --red-border:#cf222e40;
+    --text:#1f2328; --text-secondary:#656d76; --text-muted:#8b949e;
+    --sans:'Inter',system-ui,-apple-system,sans-serif; --mono:'Roboto Mono',monospace;
     --safe-bottom: env(safe-area-inset-bottom, 0px);
+    --radius:8px;
   }
-  html, body { background:var(--bg); color:var(--text); font-family:var(--mono); min-height:100vh; -webkit-font-smoothing:antialiased; }
+  html, body { background:var(--bg); color:var(--text); font-family:var(--sans); min-height:100vh; -webkit-font-smoothing:antialiased; font-size:14px; }
   #root { min-height:100vh; }
-
-  /* ── Mobile-first layout ── */
   .app { display:flex; flex-direction:column; min-height:100vh; }
 
   /* Top nav */
   .topnav {
-    background:var(--surface); border-bottom:1px solid var(--border);
-    padding:14px 16px; display:flex; align-items:center; justify-content:space-between;
-    position:sticky; top:0; z-index:20;
+    background:var(--blue); color:#fff;
+    padding:12px 16px; display:flex; align-items:center; justify-content:space-between;
+    position:sticky; top:0; z-index:20; box-shadow:0 1px 3px rgba(0,0,0,0.15);
   }
   .nav-logo { display:flex; align-items:center; gap:10px; }
-  .logo-badge { background:var(--accent); color:#000; font-family:var(--sans); font-weight:700; font-size:10px; letter-spacing:0.08em; padding:3px 7px; }
-  .logo-title { font-family:var(--sans); font-size:15px; font-weight:700; }
-  .nav-status { display:flex; align-items:center; gap:6px; font-size:10px; color:var(--text-muted); }
-  .sdot { width:6px; height:6px; border-radius:50%; background:var(--text-dim); }
-  .sdot.on { background:var(--accent); box-shadow:0 0 5px var(--accent); }
+  .logo-badge { background:#fff; color:var(--blue); font-weight:700; font-size:10px; letter-spacing:0.06em; padding:3px 8px; border-radius:3px; }
+  .logo-title { font-size:15px; font-weight:700; }
+  .nav-status { display:flex; align-items:center; gap:6px; font-size:10px; opacity:0.85; }
+  .sdot { width:6px; height:6px; border-radius:50%; background:rgba(255,255,255,0.35); }
+  .sdot.on { background:#4ade80; box-shadow:0 0 5px #4ade80; }
+  .nav-btn { background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.25); color:#fff; font-family:var(--sans); font-size:11px; padding:5px 10px; cursor:pointer; border-radius:4px; }
 
-  /* Env toggle bar */
-  .env-bar { display:flex; border-bottom:1px solid var(--border); }
-  .env-btn { flex:1; background:var(--bg); border:none; border-bottom:2px solid transparent; color:var(--text-muted); font-family:var(--mono); font-size:11px; padding:10px; cursor:pointer; transition:all 0.15s; letter-spacing:0.05em; }
-  .env-btn.active { color:var(--accent); border-bottom-color:var(--accent); background:var(--accent-dim); }
+  /* Env toggle */
+  .env-bar { display:flex; background:#fff; border-bottom:1px solid var(--border); }
+  .env-btn { flex:1; background:#fff; border:none; border-bottom:2px solid transparent; color:var(--text-muted); font-family:var(--sans); font-size:12px; font-weight:500; padding:10px; cursor:pointer; transition:all 0.15s; }
+  .env-btn.active { color:var(--blue); border-bottom-color:var(--blue); background:var(--blue-bg); }
 
-  /* Scrollable content */
-  .content { flex:1; overflow-y:auto; padding:16px; padding-bottom:calc(80px + var(--safe-bottom)); }
+  .content { flex:1; overflow-y:auto; padding:12px; padding-bottom:calc(80px + var(--safe-bottom)); max-width:600px; margin:0 auto; width:100%; }
 
   /* Cards */
-  .card { background:var(--surface); border:1px solid var(--border); margin-bottom:12px; }
-  .card-head { padding:12px 16px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:8px; }
-  .card-num { font-size:9px; color:var(--accent); font-weight:600; background:var(--accent-dim); padding:2px 6px; }
-  .card-title { font-family:var(--sans); font-size:13px; font-weight:700; }
-  .card-body { padding:16px; }
+  .card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); margin-bottom:12px; overflow:hidden; }
+  .card-head { padding:10px 14px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:8px; background:#fafbfc; }
+  .card-num { font-size:9px; color:var(--blue); font-weight:700; background:var(--blue-bg); padding:2px 7px; border-radius:3px; }
+  .card-title { font-size:13px; font-weight:600; }
+  .card-body { padding:14px; }
 
-  /* Form fields */
-  .field { margin-bottom:14px; }
+  /* Form */
+  .field { margin-bottom:12px; }
   .field:last-child { margin-bottom:0; }
-  .field-label { font-size:10px; color:var(--text-muted); letter-spacing:0.05em; text-transform:uppercase; margin-bottom:6px; }
-  .field-label span { color:var(--accent); }
-  .field-input, .field-sel { width:100%; background:var(--bg); border:1px solid var(--border); color:var(--text); font-family:var(--mono); font-size:14px; padding:11px 12px; outline:none; transition:border-color 0.15s; -webkit-appearance:none; border-radius:0; }
-  .field-input:focus, .field-sel:focus { border-color:var(--accent); }
-  .field-sel { appearance:none; cursor:pointer; }
+  .field-label { font-size:11px; color:var(--text-secondary); font-weight:500; margin-bottom:5px; }
+  .field-label span { color:var(--red); }
+  .field-input, .field-sel {
+    width:100%; background:#fff; border:1px solid var(--border); color:var(--text);
+    font-family:var(--sans); font-size:14px; padding:9px 11px; outline:none;
+    transition:border-color 0.15s; border-radius:6px; -webkit-appearance:none;
+  }
+  .field-input:focus, .field-sel:focus { border-color:var(--blue); box-shadow:0 0 0 2px var(--blue-dim); }
+  .field-sel { appearance:none; cursor:pointer; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23656d76' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 10px center; padding-right:30px; }
   .row2 { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
 
+  /* Collapsible */
+  .coll-toggle { width:100%; background:none; border:1px dashed var(--border); color:var(--text-secondary); font-family:var(--sans); font-size:12px; font-weight:500; padding:10px 14px; cursor:pointer; border-radius:6px; transition:all 0.15s; display:flex; align-items:center; gap:6px; }
+  .coll-toggle:hover { border-color:var(--blue); color:var(--blue); }
+  .coll-toggle .arr { transition:transform 0.2s; font-size:10px; }
+  .coll-toggle .arr.open { transform:rotate(90deg); }
+  .coll-body { padding:12px 0 0; }
+
   /* Line items */
-  .line-item { background:var(--bg); border:1px solid var(--border); padding:12px; margin-bottom:8px; position:relative; }
-  .line-item:last-child { margin-bottom:0; }
-  .line-desc { width:100%; background:transparent; border:none; border-bottom:1px solid var(--border); color:var(--text); font-family:var(--mono); font-size:13px; padding:4px 0 8px; outline:none; margin-bottom:10px; }
-  .line-desc::placeholder { color:var(--text-dim); }
+  .line-item { background:var(--bg); border:1px solid var(--border); border-radius:6px; padding:12px; margin-bottom:8px; position:relative; }
+  .line-desc { width:100%; background:#fff; border:1px solid var(--border); border-radius:4px; color:var(--text); font-family:var(--sans); font-size:13px; padding:8px 10px; outline:none; margin-bottom:10px; }
+  .line-desc:focus { border-color:var(--blue); }
+  .line-desc::placeholder { color:var(--text-muted); }
   .line-nums { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-bottom:8px; }
   .line-num-field { display:flex; flex-direction:column; gap:4px; }
-  .line-num-label { font-size:9px; color:var(--text-dim); letter-spacing:0.08em; text-transform:uppercase; }
-  .line-num-input { background:var(--bg); border:1px solid var(--border); color:var(--text); font-family:var(--mono); font-size:13px; padding:7px 8px; outline:none; width:100%; transition:border-color 0.15s; -webkit-appearance:none; border-radius:0; }
-  .line-num-input:focus { border-color:var(--accent); }
+  .line-num-label { font-size:9px; color:var(--text-muted); font-weight:600; letter-spacing:0.05em; text-transform:uppercase; }
+  .line-num-input { background:#fff; border:1px solid var(--border); color:var(--text); font-family:var(--sans); font-size:13px; padding:7px 8px; outline:none; width:100%; border-radius:4px; -webkit-appearance:none; }
+  .line-num-input:focus { border-color:var(--blue); }
   .line-footer { display:flex; justify-content:space-between; align-items:center; }
-  .line-vat-sel { background:var(--bg); border:1px solid var(--border); color:var(--text-muted); font-family:var(--mono); font-size:11px; padding:5px 8px; outline:none; -webkit-appearance:none; cursor:pointer; }
-  .line-total { font-size:13px; color:var(--accent); font-weight:600; }
-  .line-del { position:absolute; top:10px; right:10px; background:none; border:1px solid var(--border); color:var(--text-dim); width:24px; height:24px; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:14px; transition:all 0.15s; }
-  .line-del:hover { border-color:var(--red); color:var(--red); }
-
-  .add-line { width:100%; background:none; border:1px dashed var(--border); color:var(--text-muted); font-family:var(--mono); font-size:12px; padding:10px; cursor:pointer; margin-top:10px; transition:all 0.15s; }
-  .add-line:hover { border-color:var(--accent); color:var(--accent); }
+  .line-total { font-size:13px; color:var(--blue); font-weight:700; }
+  .line-del { position:absolute; top:10px; right:10px; background:#fff; border:1px solid var(--border); color:var(--text-muted); width:24px; height:24px; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:14px; border-radius:4px; }
+  .line-del:hover { border-color:var(--red); color:var(--red); background:var(--red-bg); }
+  .add-line { width:100%; background:none; border:1px dashed var(--border); color:var(--text-secondary); font-family:var(--sans); font-size:12px; padding:10px; cursor:pointer; margin-top:8px; border-radius:6px; }
+  .add-line:hover { border-color:var(--blue); color:var(--blue); }
 
   /* Summary */
-  .sum-row { display:flex; justify-content:space-between; padding:9px 16px; border-bottom:1px solid var(--border); font-size:12px; }
+  .sum-row { display:flex; justify-content:space-between; padding:8px 14px; border-bottom:1px solid #eef0f2; font-size:12px; }
   .sum-row:last-child { border-bottom:none; }
-  .sum-label { color:var(--text-muted); }
+  .sum-label { color:var(--text-secondary); }
   .sum-val { font-weight:600; }
-  .sum-total { background:var(--accent-dim); border-top:2px solid var(--accent) !important; }
-  .sum-total .sum-label { color:var(--accent); font-size:11px; }
-  .sum-total .sum-val { color:var(--accent); font-size:15px; }
-  .vat-sub { padding:5px 16px; background:var(--bg); border-bottom:1px solid var(--border); display:flex; justify-content:space-between; font-size:10px; color:var(--text-muted); }
+  .sum-total { background:var(--blue-bg); border-top:2px solid var(--blue) !important; }
+  .sum-total .sum-label { color:var(--blue); font-weight:700; }
+  .sum-total .sum-val { color:var(--blue); font-size:16px; font-weight:700; }
+  .vat-sub { padding:4px 14px; background:#fafbfc; border-bottom:1px solid #eef0f2; display:flex; justify-content:space-between; font-size:10px; color:var(--text-muted); }
 
-  /* Bottom action bar */
+  /* Bottom bar */
   .bottom-bar {
     position:fixed; bottom:0; left:0; right:0;
-    background:var(--surface); border-top:1px solid var(--border);
-    padding:12px 16px; padding-bottom:calc(12px + var(--safe-bottom));
-    display:flex; gap:10px; z-index:20;
+    background:#fff; border-top:1px solid var(--border);
+    padding:10px 12px; padding-bottom:calc(10px + var(--safe-bottom));
+    display:flex; gap:8px; z-index:20;
   }
-  .btn-send { flex:1; background:var(--accent); border:none; color:#000; font-family:var(--sans); font-size:14px; font-weight:700; padding:14px; cursor:pointer; letter-spacing:0.05em; text-transform:uppercase; transition:all 0.15s; }
-  .btn-send:disabled { background:var(--border); color:var(--text-dim); cursor:not-allowed; }
-  .btn-xml { background:none; border:1px solid var(--border); color:var(--text-muted); font-family:var(--mono); font-size:11px; padding:14px 14px; cursor:pointer; white-space:nowrap; }
-  .btn-pdf { background:none; border:1px solid var(--accent); color:var(--accent); font-family:var(--mono); font-size:11px; padding:14px 14px; cursor:pointer; white-space:nowrap; transition:all 0.15s; }
-  .btn-pdf:disabled { border-color:var(--border); color:var(--text-dim); cursor:not-allowed; }
-  .btn-pdf:not(:disabled):hover { background:var(--accent-dim); }
-  .btn-wa { background:#25D366; border:none; color:#fff; font-family:var(--sans); font-size:11px; font-weight:700; padding:14px 14px; cursor:pointer; white-space:nowrap; transition:all 0.15s; display:flex; align-items:center; gap:6px; }
-  .btn-wa:disabled { background:var(--border); color:var(--text-dim); cursor:not-allowed; }
+  .btn-send { flex:1; background:var(--blue); border:none; color:#fff; font-family:var(--sans); font-size:14px; font-weight:700; padding:12px; cursor:pointer; border-radius:6px; }
+  .btn-send:hover { background:var(--blue-light); }
+  .btn-send:disabled { background:var(--border); color:var(--text-muted); cursor:not-allowed; }
+  .btn-xml { background:#fff; border:1px solid var(--border); color:var(--text-secondary); font-family:var(--mono); font-size:11px; padding:12px; cursor:pointer; border-radius:6px; }
+  .btn-pdf { background:#fff; border:1px solid var(--blue); color:var(--blue); font-family:var(--sans); font-size:11px; font-weight:600; padding:12px; cursor:pointer; border-radius:6px; }
+  .btn-pdf:disabled { border-color:var(--border); color:var(--text-muted); cursor:not-allowed; }
+  .btn-wa { background:#25D366; border:none; color:#fff; font-family:var(--sans); font-size:11px; font-weight:700; padding:12px; cursor:pointer; border-radius:6px; display:flex; align-items:center; gap:5px; }
+  .btn-wa:disabled { background:var(--border); color:var(--text-muted); cursor:not-allowed; }
 
-  /* Settings drawer */
-  .drawer-overlay { position:fixed; inset:0; background:#00000088; z-index:30; }
-  .drawer { position:fixed; bottom:0; left:0; right:0; background:var(--surface); border-top:1px solid var(--border); z-index:31; max-height:85vh; overflow-y:auto; padding-bottom:var(--safe-bottom); }
+  /* Drawer & Modal */
+  .drawer-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:30; }
+  .drawer { position:fixed; bottom:0; left:0; right:0; background:#fff; border-top:1px solid var(--border); z-index:31; max-height:85vh; overflow-y:auto; padding-bottom:var(--safe-bottom); border-radius:16px 16px 0 0; }
   .drawer-handle { width:36px; height:4px; background:var(--border); border-radius:2px; margin:12px auto 8px; }
-  .drawer-title { font-family:var(--sans); font-size:14px; font-weight:700; padding:0 20px 16px; border-bottom:1px solid var(--border); }
+  .drawer-title { font-size:14px; font-weight:700; padding:0 20px 14px; border-bottom:1px solid var(--border); }
   .drawer-body { padding:16px 20px; }
-
-  /* XML modal */
-  .modal-overlay { position:fixed; inset:0; background:#00000099; z-index:40; display:flex; align-items:flex-end; }
-  .modal { background:var(--surface); border-top:1px solid var(--border); width:100%; max-height:80vh; display:flex; flex-direction:column; }
+  .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:40; display:flex; align-items:flex-end; }
+  .modal { background:#fff; width:100%; max-height:80vh; display:flex; flex-direction:column; border-radius:16px 16px 0 0; }
   .modal-head { padding:14px 16px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; }
-  .modal-title { font-family:var(--sans); font-size:13px; font-weight:700; }
-  .modal-close { background:none; border:1px solid var(--border); color:var(--text-muted); font-family:var(--mono); font-size:12px; padding:5px 10px; cursor:pointer; }
-  .xml-pre { flex:1; overflow:auto; padding:14px; font-size:10px; line-height:1.7; color:var(--text-muted); white-space:pre; background:var(--bg); }
+  .modal-title { font-size:13px; font-weight:700; }
+  .modal-close { background:#fff; border:1px solid var(--border); color:var(--text-secondary); font-family:var(--sans); font-size:12px; padding:5px 10px; cursor:pointer; border-radius:4px; }
+  .xml-pre { flex:1; overflow:auto; padding:14px; font-family:var(--mono); font-size:10px; line-height:1.7; color:var(--text-secondary); white-space:pre; background:#fafbfc; }
 
   /* Response */
-  .resp-card { border:1px solid var(--border); margin-bottom:12px; }
-  .resp-ok { border-color:var(--accent); background:var(--accent-dim); }
-  .resp-err { border-color:var(--red); background:var(--red-dim); }
-  .resp-head { padding:12px 16px; border-bottom:1px solid inherit; display:flex; align-items:center; gap:8px; }
-  .resp-mark { font-size:10px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; }
-  .resp-mark.ok { color:var(--accent); }
+  .resp-card { border-radius:var(--radius); margin-bottom:12px; overflow:hidden; }
+  .resp-ok { border:1px solid var(--green-border); background:var(--green-bg); }
+  .resp-err { border:1px solid var(--red-border); background:var(--red-bg); }
+  .resp-head { padding:10px 14px; display:flex; align-items:center; gap:8px; }
+  .resp-mark { font-size:11px; font-weight:700; }
+  .resp-mark.ok { color:var(--green); }
   .resp-mark.er { color:var(--red); }
-  .resp-body { padding:12px 16px; font-size:11px; line-height:1.8; }
-  .uid { color:var(--accent); font-size:11px; word-break:break-all; margin-top:4px; }
+  .resp-body { padding:12px 14px; font-size:12px; line-height:1.7; }
+  .uid { color:var(--blue); font-size:11px; word-break:break-all; margin-top:2px; font-family:var(--mono); }
 
   /* Log */
   .log-wrap { padding:8px 12px; max-height:120px; overflow-y:auto; }
-  .log-line { font-size:10px; padding:3px 0; border-bottom:1px solid var(--border); display:flex; gap:8px; }
-  .log-t { color:var(--text-dim); min-width:60px; flex-shrink:0; }
-  .log-ok { color:var(--accent); }
+  .log-line { font-size:10px; font-family:var(--mono); padding:3px 0; border-bottom:1px solid #eef0f2; display:flex; gap:8px; }
+  .log-t { color:var(--text-muted); min-width:60px; flex-shrink:0; }
+  .log-ok { color:var(--green); }
   .log-er { color:var(--red); }
 
   @keyframes spin { to { transform:rotate(360deg); } }
-  .spinner { display:inline-block; width:13px; height:13px; border:2px solid #00000033; border-top-color:#000; border-radius:50%; animation:spin 0.7s linear infinite; vertical-align:middle; margin-right:6px; }
-
-  ::-webkit-scrollbar { width:3px; }
-  ::-webkit-scrollbar-thumb { background:var(--border); }
+  .spinner { display:inline-block; width:13px; height:13px; border:2px solid rgba(255,255,255,0.3); border-top-color:#fff; border-radius:50%; animation:spin 0.7s linear infinite; vertical-align:middle; margin-right:6px; }
 </style>
 </head>
 <body>
 <div id="root"></div>
 <script type="text/babel">
-const { useState, useMemo, useEffect, useRef, useCallback } = React;
+const { useState, useMemo, useEffect, useRef } = React;
 
-// Σε Vercel το endpoint είναι /api/send (same domain = no CORS)
 const PROXY = '/api/send';
-
 const VAT = [
   { code:1, label:'24%', rate:0.24 },
   { code:2, label:'13%', rate:0.13 },
@@ -181,41 +183,32 @@ const PAY = [
   { code:6, label:'POS' }, { code:7, label:'IRIS' },
   { code:5, label:'Web Banking' }, { code:1, label:'Επαγ. Λογαριασμός' },
 ];
-
 const esc = s => (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 const fmt = n => n.toFixed(2).replace('.',',') + ' €';
 const nL = () => ({ id:Date.now()+Math.random(), desc:'', qty:'1', price:'', vat:1 });
 
-// Persist AA counter per series
 const AA_KEY = 'mydata_aa';
-function loadAA(series) {
-  try { const d = JSON.parse(localStorage.getItem(AA_KEY)) || {}; return d[series||'A'] || 1; } catch { return 1; }
-}
-function saveAA(series, val) {
-  try { const d = JSON.parse(localStorage.getItem(AA_KEY)) || {}; d[series||'A'] = val; localStorage.setItem(AA_KEY, JSON.stringify(d)); } catch {}
-}
-
-// Persist history
+function loadAA(s) { try { return (JSON.parse(localStorage.getItem(AA_KEY))||{})[s||'A']||1; } catch { return 1; } }
+function saveAA(s,v) { try { const d=JSON.parse(localStorage.getItem(AA_KEY))||{}; d[s||'A']=v; localStorage.setItem(AA_KEY,JSON.stringify(d)); } catch{} }
 const HIST_KEY = 'mydata_history';
-function loadHistory() {
-  try { return JSON.parse(localStorage.getItem(HIST_KEY)) || []; } catch { return []; }
-}
-function saveHistory(h) {
-  try { localStorage.setItem(HIST_KEY, JSON.stringify(h.slice(0,20))); } catch {}
-}
+function loadHistory() { try { return JSON.parse(localStorage.getItem(HIST_KEY))||[]; } catch { return []; } }
+function saveHistory(h) { try { localStorage.setItem(HIST_KEY,JSON.stringify(h.slice(0,20))); } catch{} }
 const STORE_KEY = 'mydata_creds';
-function loadCreds() {
-  try { return JSON.parse(localStorage.getItem(STORE_KEY)) || {}; } catch { return {}; }
-}
-function saveCreds(c) {
-  try { localStorage.setItem(STORE_KEY, JSON.stringify(c)); } catch {}
-}
+function loadCreds() { try { return JSON.parse(localStorage.getItem(STORE_KEY))||{}; } catch { return {}; } }
+function saveCreds(c) { try { localStorage.setItem(STORE_KEY,JSON.stringify(c)); } catch{} }
 
-function buildXML({ afm, branch, series, aa, type, pay, lines, totals }) {
+function buildXML({ afm, branch, series, aa, type, pay, lines, totals, counterpart }) {
   const date = new Date().toISOString().slice(0,10);
-  // Income classification: retail sales of goods/services
-  const iclsType = type === '11.2' ? 'E3_561_003' : 'E3_561_003';
-  const iclsCat = 'category1_3';
+  const iclsType='E3_561_003', iclsCat='category1_3';
+  let cpXml = '';
+  if (counterpart && (counterpart.afm || counterpart.name)) {
+    cpXml = '    <counterpart>\n';
+    if (counterpart.afm) cpXml += `      <vatNumber>${esc(counterpart.afm)}</vatNumber>\n`;
+    cpXml += `      <country>${esc(counterpart.country||'GR')}</country>\n`;
+    if (counterpart.branch) cpXml += `      <branch>${esc(counterpart.branch)}</branch>\n`;
+    if (counterpart.name) cpXml += `      <name>${esc(counterpart.name)}</name>\n`;
+    cpXml += '    </counterpart>\n';
+  }
   const lx = lines.map((l,i) => {
     const vc = VAT.find(v=>v.code===Number(l.vat));
     const net = ((parseFloat(l.qty)||0)*(parseFloat(l.price)||0)).toFixed(2);
@@ -242,7 +235,7 @@ function buildXML({ afm, branch, series, aa, type, pay, lines, totals }) {
       <country>GR</country>
       <branch>${branch||0}</branch>
     </issuer>
-    <invoiceHeader>
+${cpXml}    <invoiceHeader>
       <series>${series||'A'}</series>
       <aa>${aa}</aa>
       <issueDate>${date}</issueDate>
@@ -289,23 +282,17 @@ function App() {
   const [showXml, setShowXml] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [logs, setLogs] = useState([]);
-  const [lastInvoice, setLastInvoice] = useState(null); // stores data needed for PDF/WhatsApp
+  const [lastInvoice, setLastInvoice] = useState(null);
   const qrRef = useRef(null);
+  const [showCp, setShowCp] = useState(false);
+  const [cp, setCp] = useState({ name:'', afm:'', country:'GR', branch:'0' });
 
-  // Render QR code in response card when resp changes
   useEffect(() => {
     if (resp?.ok && qrRef.current) {
       qrRef.current.innerHTML = '';
       const qrData = resp.qrUrl || (resp.mark ? `https://mydata.aade.gr/invoice/${resp.mark}` : null);
       if (qrData) {
-        new QRCode(qrRef.current, {
-          text: qrData,
-          width: 120,
-          height: 120,
-          colorDark: '#00e87a',
-          colorLight: '#141716',
-          correctLevel: QRCode.CorrectLevel.M,
-        });
+        new QRCode(qrRef.current, { text:qrData, width:120, height:120, colorDark:'#003476', colorLight:'#ffffff', correctLevel:QRCode.CorrectLevel.M });
       }
     }
   }, [resp]);
@@ -315,270 +302,92 @@ function App() {
     setLogs(p=>[{t,msg,type},...p.slice(0,14)]);
   };
 
-  // ── PDF generation via html2canvas (supports Greek) ──
   const downloadPDF = async () => {
     const inv = lastInvoice;
     if (!inv) return;
-
     const fmtE = n => n.toFixed(2).replace('.',',') + ' €';
-
-    // Build HTML receipt
     const vatRows = Object.entries(inv.totals.vg).map(([cat,{net,vat}]) => {
       const vi = VAT.find(v=>v.code===Number(cat));
-      return `<tr><td style="color:#6b7a6e;font-size:11px;padding:3px 0;">ΦΠΑ ${vi?.label} επί ${fmtE(net)}</td><td style="text-align:right;font-size:11px;padding:3px 0;">${fmtE(vat)}</td></tr>`;
+      return `<tr><td style="color:#656d76;font-size:11px;padding:3px 0;">ΦΠΑ ${vi?.label} επί ${fmtE(net)}</td><td style="text-align:right;font-size:11px;padding:3px 0;">${fmtE(vat)}</td></tr>`;
     }).join('');
-
     const lineRows = inv.lines.map((l,i) => {
       const vc = VAT.find(v=>v.code===Number(l.vat));
       const net = (parseFloat(l.qty)||0)*(parseFloat(l.price)||0);
       const vatAmt = net*(vc?.rate||0);
-      return `<tr style="border-bottom:1px solid #2a2f2c;">
-        <td style="padding:6px 4px;color:#6b7a6e;">${i+1}</td>
-        <td style="padding:6px 4px;">${l.desc}</td>
-        <td style="padding:6px 4px;text-align:center;">${parseFloat(l.qty)||0}</td>
-        <td style="padding:6px 4px;text-align:right;">${fmtE(parseFloat(l.price)||0)}</td>
-        <td style="padding:6px 4px;text-align:center;color:#6b7a6e;">${vc?.label||'24%'}</td>
-        <td style="padding:6px 4px;text-align:right;font-weight:600;">${fmtE(net+vatAmt)}</td>
-      </tr>`;
+      return `<tr style="border-bottom:1px solid #e5e7eb;"><td style="padding:7px 6px;color:#656d76;">${i+1}</td><td style="padding:7px 6px;">${l.desc}</td><td style="padding:7px 6px;text-align:center;">${parseFloat(l.qty)||0}</td><td style="padding:7px 6px;text-align:right;">${fmtE(parseFloat(l.price)||0)}</td><td style="padding:7px 6px;text-align:center;color:#656d76;">${vc?.label||'24%'}</td><td style="padding:7px 6px;text-align:right;font-weight:600;">${fmtE(net+vatAmt)}</td></tr>`;
     }).join('');
-
-    const html = `
-      <div style="width:595px;min-height:842px;background:#0d0f0e;color:#e8ede9;font-family:'IBM Plex Mono',monospace;padding:0;position:relative;">
-        <!-- Header -->
-        <div style="background:#141716;padding:24px 32px;border-bottom:2px solid #00e87a;">
-          <div style="display:flex;justify-content:space-between;align-items:center;">
-            <div style="display:flex;align-items:center;gap:14px;">
-              <div style="background:#00e87a;color:#000;font-family:'IBM Plex Sans Condensed',sans-serif;font-weight:700;font-size:11px;letter-spacing:0.08em;padding:4px 10px;">myDATA</div>
-              <div style="font-family:'IBM Plex Sans Condensed',sans-serif;font-size:16px;font-weight:700;">${inv.typeLbl}</div>
-            </div>
-            <div style="text-align:right;font-size:11px;color:#6b7a6e;">
-              <div>${inv.env==='prod'?'ΠΑΡΑΓΩΓΗ':'TEST'}</div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Info -->
-        <div style="padding:20px 32px;display:flex;justify-content:space-between;border-bottom:1px solid #2a2f2c;font-size:12px;">
-          <div>
-            <div style="color:#6b7a6e;font-size:9px;letter-spacing:0.08em;margin-bottom:4px;">ΕΚΔΟΤΗΣ</div>
-            <div>ΑΦΜ: ${inv.afm}</div>
-            <div style="color:#6b7a6e;">Παράρτημα: ${inv.branch}</div>
-          </div>
-          <div style="text-align:right;">
-            <div style="color:#6b7a6e;font-size:9px;letter-spacing:0.08em;margin-bottom:4px;">ΠΑΡΑΣΤΑΤΙΚΟ</div>
-            <div style="color:#00e87a;font-weight:600;">${inv.series}-${inv.aa}</div>
-            <div style="color:#6b7a6e;">${inv.date}</div>
-          </div>
-        </div>
-
-        <!-- Payment -->
-        <div style="padding:10px 32px;border-bottom:1px solid #2a2f2c;font-size:11px;color:#6b7a6e;">
-          Πληρωμή: <span style="color:#e8ede9;">${inv.payLbl}</span>
-        </div>
-
-        <!-- Lines table -->
-        <div style="padding:16px 32px;">
-          <table style="width:100%;border-collapse:collapse;font-size:12px;">
-            <thead>
-              <tr style="border-bottom:2px solid #00e87a;">
-                <th style="text-align:left;padding:6px 4px;color:#6b7a6e;font-size:9px;font-weight:600;letter-spacing:0.08em;">#</th>
-                <th style="text-align:left;padding:6px 4px;color:#6b7a6e;font-size:9px;font-weight:600;letter-spacing:0.08em;">ΠΕΡΙΓΡΑΦΗ</th>
-                <th style="text-align:center;padding:6px 4px;color:#6b7a6e;font-size:9px;font-weight:600;letter-spacing:0.08em;">ΠΟΣ.</th>
-                <th style="text-align:right;padding:6px 4px;color:#6b7a6e;font-size:9px;font-weight:600;letter-spacing:0.08em;">ΤΙΜΗ</th>
-                <th style="text-align:center;padding:6px 4px;color:#6b7a6e;font-size:9px;font-weight:600;letter-spacing:0.08em;">ΦΠΑ</th>
-                <th style="text-align:right;padding:6px 4px;color:#6b7a6e;font-size:9px;font-weight:600;letter-spacing:0.08em;">ΣΥΝΟΛΟ</th>
-              </tr>
-            </thead>
-            <tbody>${lineRows}</tbody>
-          </table>
-        </div>
-
-        <!-- Summary -->
-        <div style="padding:16px 32px;">
-          <table style="width:280px;margin-left:auto;border-collapse:collapse;font-size:12px;">
-            <tr><td style="color:#6b7a6e;padding:4px 0;">Καθαρή Αξία</td><td style="text-align:right;padding:4px 0;">${fmtE(inv.totals.net)}</td></tr>
-            ${vatRows}
-            <tr><td style="color:#6b7a6e;padding:4px 0;">Σύνολο ΦΠΑ</td><td style="text-align:right;padding:4px 0;">${fmtE(inv.totals.vat)}</td></tr>
-            <tr style="border-top:2px solid #00e87a;">
-              <td style="color:#00e87a;font-weight:700;font-size:14px;padding:10px 0;">ΣΥΝΟΛΟ</td>
-              <td style="text-align:right;color:#00e87a;font-weight:700;font-size:14px;padding:10px 0;">${fmtE(inv.totals.gross)}</td>
-            </tr>
-          </table>
-        </div>
-
-        ${inv.mark ? `
-        <!-- MARK + QR -->
-        <div style="margin:8px 32px;padding:14px 16px;background:#00e87a18;border:1px solid #00e87a;display:flex;justify-content:space-between;align-items:flex-start;">
-          <div style="flex:1;">
-            <div style="display:flex;gap:16px;align-items:baseline;">
-              <div style="font-size:9px;color:#00e87a;font-weight:600;letter-spacing:0.08em;">MARK</div>
-              <div style="font-size:14px;color:#00e87a;font-weight:600;">${inv.mark}</div>
-            </div>
-            ${inv.uid ? `<div style="margin-top:6px;font-size:9px;color:#6b7a6e;">UID: <span style="color:#e8ede9;">${inv.uid}</span></div>` : ''}
-            ${inv.auth ? `<div style="margin-top:4px;font-size:9px;color:#6b7a6e;">AUTH: <span style="color:#e8ede9;">${inv.auth}</span></div>` : ''}
-            ${inv.qrUrl ? `<div style="margin-top:4px;font-size:8px;color:#6b7a6e;word-break:break-all;">${inv.qrUrl}</div>` : ''}
-          </div>
-          <div id="pdf-qr" style="margin-left:12px;flex-shrink:0;"></div>
-        </div>` : ''}
-
-        <!-- Footer -->
-        <div style="position:absolute;bottom:20px;left:0;right:0;text-align:center;font-size:9px;color:#3d4a3f;">
-          Εκδόθηκε μέσω myDATA App  |  ${new Date().toLocaleString('el')}
-        </div>
-      </div>`;
-
-    // Render off-screen
+    const cpHtml = inv.cp && (inv.cp.name||inv.cp.afm) ? `<div style="padding:12px 32px;border-bottom:1px solid #e5e7eb;font-size:12px;"><div style="color:#656d76;font-size:9px;font-weight:600;letter-spacing:0.08em;margin-bottom:4px;">ΣΤΟΙΧΕΙΑ ΠΕΛΑΤΗ</div>${inv.cp.name?`<div>Επωνυμία: <strong>${inv.cp.name}</strong></div>`:''} ${inv.cp.afm?`<div>ΑΦΜ: ${inv.cp.afm}</div>`:''}</div>` : '';
+    const html = `<div style="width:595px;min-height:842px;background:#fff;color:#1f2328;font-family:Inter,system-ui,sans-serif;position:relative;">
+      <div style="background:#003476;padding:24px 32px;color:#fff;"><div style="display:flex;justify-content:space-between;align-items:center;"><div style="display:flex;align-items:center;gap:14px;"><div style="background:#fff;color:#003476;font-weight:700;font-size:11px;padding:4px 10px;border-radius:3px;">myDATA</div><div style="font-size:16px;font-weight:700;">${inv.typeLbl}</div></div><div style="font-size:11px;opacity:0.8;">${inv.env==='prod'?'ΠΑΡΑΓΩΓΗ':'ΔΟΚΙΜΑΣΤΙΚΟ'}</div></div></div>
+      <div style="padding:16px 32px;display:flex;justify-content:space-between;border-bottom:1px solid #e5e7eb;font-size:12px;"><div><div style="color:#656d76;font-size:9px;font-weight:600;letter-spacing:0.08em;margin-bottom:4px;">ΕΚΔΟΤΗΣ</div><div>ΑΦΜ: <strong>${inv.afm}</strong></div><div style="color:#656d76;">Παράρτημα: ${inv.branch}</div></div><div style="text-align:right;"><div style="color:#656d76;font-size:9px;font-weight:600;letter-spacing:0.08em;margin-bottom:4px;">ΠΑΡΑΣΤΑΤΙΚΟ</div><div style="color:#003476;font-weight:700;font-size:14px;">${inv.series}-${inv.aa}</div><div style="color:#656d76;">${inv.date}</div></div></div>
+      ${cpHtml}
+      <div style="padding:8px 32px;border-bottom:1px solid #e5e7eb;font-size:11px;color:#656d76;">Πληρωμή: <strong style="color:#1f2328;">${inv.payLbl}</strong></div>
+      <div style="padding:16px 32px;"><table style="width:100%;border-collapse:collapse;font-size:12px;"><thead><tr style="border-bottom:2px solid #003476;"><th style="text-align:left;padding:6px;color:#656d76;font-size:9px;font-weight:600;">#</th><th style="text-align:left;padding:6px;color:#656d76;font-size:9px;font-weight:600;">ΠΕΡΙΓΡΑΦΗ</th><th style="text-align:center;padding:6px;color:#656d76;font-size:9px;font-weight:600;">ΠΟΣ.</th><th style="text-align:right;padding:6px;color:#656d76;font-size:9px;font-weight:600;">ΤΙΜΗ</th><th style="text-align:center;padding:6px;color:#656d76;font-size:9px;font-weight:600;">ΦΠΑ</th><th style="text-align:right;padding:6px;color:#656d76;font-size:9px;font-weight:600;">ΣΥΝΟΛΟ</th></tr></thead><tbody>${lineRows}</tbody></table></div>
+      <div style="padding:8px 32px 16px;"><table style="width:260px;margin-left:auto;border-collapse:collapse;font-size:12px;"><tr><td style="color:#656d76;padding:4px 0;">Καθαρή Αξία</td><td style="text-align:right;padding:4px 0;">${fmtE(inv.totals.net)}</td></tr>${vatRows}<tr><td style="color:#656d76;padding:4px 0;">Σύνολο ΦΠΑ</td><td style="text-align:right;padding:4px 0;">${fmtE(inv.totals.vat)}</td></tr><tr style="border-top:2px solid #003476;"><td style="color:#003476;font-weight:700;font-size:14px;padding:10px 0;">ΣΥΝΟΛΟ</td><td style="text-align:right;color:#003476;font-weight:700;font-size:14px;padding:10px 0;">${fmtE(inv.totals.gross)}</td></tr></table></div>
+      ${inv.mark ? `<div style="margin:0 32px;padding:14px 16px;background:#e8eef6;border:1px solid #003476;border-radius:6px;display:flex;justify-content:space-between;align-items:flex-start;"><div style="flex:1;"><div style="display:flex;gap:12px;align-items:baseline;"><div style="font-size:9px;color:#003476;font-weight:700;">MARK</div><div style="font-size:14px;color:#003476;font-weight:700;">${inv.mark}</div></div>${inv.uid?`<div style="margin-top:6px;font-size:9px;color:#656d76;">UID: <span style="color:#1f2328;">${inv.uid}</span></div>`:''} ${inv.auth?`<div style="margin-top:3px;font-size:9px;color:#656d76;">AUTH: <span style="color:#1f2328;">${inv.auth}</span></div>`:''} ${inv.qrUrl?`<div style="margin-top:3px;font-size:8px;color:#656d76;word-break:break-all;">${inv.qrUrl}</div>`:''}</div><div id="pdf-qr" style="margin-left:12px;flex-shrink:0;"></div></div>` : ''}
+      <div style="position:absolute;bottom:20px;left:0;right:0;text-align:center;font-size:9px;color:#8b949e;">Εκδόθηκε μέσω myDATA App  |  ${new Date().toLocaleString('el')}</div>
+    </div>`;
     const container = document.createElement('div');
     container.style.cssText = 'position:fixed;left:-9999px;top:0;z-index:-1;';
     container.innerHTML = html;
     document.body.appendChild(container);
-
-    // Generate QR code — use qrUrl or fallback to MARK-based URL
     const qrEl = container.querySelector('#pdf-qr');
-    const qrData = inv.qrUrl || `https://mydata.aade.gr/invoice/${inv.mark}`;
-    if (qrEl && qrData) {
-      new QRCode(qrEl, {
-        text: qrData,
-        width: 90,
-        height: 90,
-        colorDark: '#00e87a',
-        colorLight: '#0d0f0e',
-        correctLevel: QRCode.CorrectLevel.M,
-      });
-      // Wait for QR image to render
-      await new Promise(r => setTimeout(r, 150));
-    }
-
+    const qrData = inv.qrUrl || (inv.mark ? `https://mydata.aade.gr/invoice/${inv.mark}` : null);
+    if (qrEl && qrData) { new QRCode(qrEl, { text:qrData, width:90, height:90, colorDark:'#003476', colorLight:'#ffffff', correctLevel:QRCode.CorrectLevel.M }); await new Promise(r=>setTimeout(r,150)); }
     try {
-      const canvas = await html2canvas(container.firstElementChild, {
-        scale: 1.5,
-        backgroundColor: '#0d0f0e',
-        useCORS: true,
-        logging: false,
-      });
+      const canvas = await html2canvas(container.firstElementChild, { scale:1.5, backgroundColor:'#ffffff', useCORS:true, logging:false });
       const imgData = canvas.toDataURL('image/jpeg', 0.75);
       const { jsPDF } = window.jspdf;
-      const pdf = new jsPDF({ unit:'mm', format:'a4', compress: true });
-      const pdfW = 210, pdfH = 297;
-      const imgW = pdfW;
-      const imgH = (canvas.height * pdfW) / canvas.width;
-      pdf.addImage(imgData, 'JPEG', 0, 0, imgW, Math.min(imgH, pdfH), undefined, 'FAST');
+      const pdf = new jsPDF({ unit:'mm', format:'a4', compress:true });
+      const imgH = (canvas.height * 210) / canvas.width;
+      pdf.addImage(imgData, 'JPEG', 0, 0, 210, Math.min(imgH, 297), undefined, 'FAST');
       pdf.save(`${inv.series}-${inv.aa}_${inv.date}.pdf`);
       log('↓ PDF αποθηκεύτηκε', 'ok');
-    } catch(e) {
-      log('✗ PDF error: ' + e.message, 'err');
-    } finally {
-      document.body.removeChild(container);
-    }
+    } catch(e) { log('✗ PDF: '+e.message, 'err'); }
+    finally { document.body.removeChild(container); }
   };
 
   const shareWhatsApp = () => {
-    const inv = lastInvoice;
-    if (!inv) return;
-    const text = [
-      `\u2705 ${inv.typeLbl}`,
-      `${inv.series}-${inv.aa} | ${inv.date}`,
-      `\u0391\u03A6\u039C: ${inv.afm}`,
-      `Σύνολο: ${fmt(inv.totals.gross)}`,
-      inv.mark ? `MARK: ${inv.mark}` : '',
-      inv.qrUrl ? `QR: ${inv.qrUrl}` : '',
-    ].filter(Boolean).join('\n');
-    const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
-    window.open(url, '_blank');
-    log('WhatsApp share opened', 'ok');
+    const inv = lastInvoice; if (!inv) return;
+    const text = [`✅ ${inv.typeLbl}`,`${inv.series}-${inv.aa} | ${inv.date}`,`ΑΦΜ: ${inv.afm}`,inv.cp?.name?`Πελάτης: ${inv.cp.name}`:'',`Σύνολο: ${fmt(inv.totals.gross)}`,inv.mark?`MARK: ${inv.mark}`:'',inv.qrUrl?`QR: ${inv.qrUrl}`:''].filter(Boolean).join('\n');
+    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+    log('WhatsApp share', 'ok');
   };
 
-  const setC = (k,v) => {
-    const next = {...cr,[k]:v};
-    setCr(next);
-    saveCreds(next);
-  };
-
+  const setC = (k,v) => { const next={...cr,[k]:v}; setCr(next); saveCreds(next); };
   const totals = useMemo(() => {
     let net=0,vat=0; const vg={};
-    for (const l of lines) {
-      const q=parseFloat(l.qty)||0, p=parseFloat(l.price)||0;
-      const vc=VAT.find(v=>v.code===Number(l.vat));
-      const ln=q*p, lv=ln*(vc?.rate||0);
-      net+=ln; vat+=lv;
-      if(!vg[l.vat]) vg[l.vat]={net:0,vat:0};
-      vg[l.vat].net+=ln; vg[l.vat].vat+=lv;
-    }
+    for (const l of lines) { const q=parseFloat(l.qty)||0,p=parseFloat(l.price)||0,vc=VAT.find(v=>v.code===Number(l.vat)),ln=q*p,lv=ln*(vc?.rate||0); net+=ln; vat+=lv; if(!vg[l.vat]) vg[l.vat]={net:0,vat:0}; vg[l.vat].net+=ln; vg[l.vat].vat+=lv; }
     return { net, vat, gross:net+vat, vg };
   }, [lines]);
-
-  const xml = useMemo(() => buildXML({
-    afm:cr.afm, branch:cr.branch, series:cr.series, aa,
-    type:itype, pay, lines, totals
-  }), [cr, aa, itype, pay, lines, totals]);
-
+  const counterpart = (cp.name||cp.afm) ? cp : null;
+  const xml = useMemo(() => buildXML({ afm:cr.afm, branch:cr.branch, series:cr.series, aa, type:itype, pay, lines, totals, counterpart }), [cr, aa, itype, pay, lines, totals, counterpart]);
   const upd = (id,f,v) => setLines(p=>p.map(l=>l.id===id?{...l,[f]:v}:l));
   const rem = id => setLines(p=>p.length>1?p.filter(l=>l.id!==id):p);
-
   const canSubmit = cr.user && cr.key && cr.afm && lines.every(l=>l.desc&&l.qty&&l.price);
 
   const submit = async () => {
-    setLoading(true); setResp(null);
-    log('Αποστολή XML...');
+    setLoading(true); setResp(null); log('Αποστολή XML...');
     try {
-      const r = await fetch(PROXY, {
-        method:'POST',
-        headers:{
-          'Content-Type':'application/xml',
-          'aade-user-id': cr.user,
-          'Ocp-Apim-Subscription-Key': cr.key,
-          'x-env': env,
-        },
-        body: xml,
-      });
+      const r = await fetch(PROXY, { method:'POST', headers:{ 'Content-Type':'application/xml', 'aade-user-id':cr.user, 'Ocp-Apim-Subscription-Key':cr.key, 'x-env':env }, body:xml });
       const text = await r.text();
       if (r.ok) {
-        // Parse AADE response XML — check for errors first
         const errMatch = text.match(/<[^:]*:?errors?\b[^>]*>[\s\S]*?<[^:]*:?message>([^<]+)<\/[^:]*:?message>/i);
         const statusCode = text.match(/<[^:]*:?statusCode>([^<]+)<\/[^:]*:?statusCode>/i)?.[1];
-        
-        if (statusCode === 'Error' || errMatch) {
-          const errMsg = errMatch?.[1] || 'Άγνωστο σφάλμα ΑΑΔΕ';
-          log(`✗ ΑΑΔΕ: ${errMsg}`, 'err');
-          setResp({ ok:false, raw:text, status:'ΑΑΔΕ Error' });
-        } else {
-          // Extract mark, uid, qrUrl — try both with and without namespace prefix
-          const extract = (tag) => {
-            const re = new RegExp('<(?:[\\w]+:)?' + tag + '>([^<]+)</(?:[\\w]+:)?' + tag + '>', 'i');
-            return text.match(re)?.[1] || null;
-          };
-          const uid = extract('invoiceUid');
-          const mark = extract('invoiceMark');
-          const qrUrl = extract('qrUrl');
-          const auth = extract('authenticationCode');
-          
-          log(`✓ MARK: ${mark||'N/A'} | UID: ${uid||'N/A'}`, 'ok');
-          if (qrUrl) log(`QR: ${qrUrl}`, 'ok');
-          setResp({ ok:true, uid, mark, qrUrl, auth, raw:text });
-          // Save invoice data for PDF/WhatsApp before resetting
-          const typeObj = TYPES.find(t=>t.code===itype);
-          const payObj = PAY.find(p2=>p2.code===pay);
-          setLastInvoice({
-            afm:cr.afm, branch:cr.branch, series:cr.series, aa,
-            date: new Date().toISOString().slice(0,10),
-            type:itype, typeLbl: typeObj?.label || itype,
-            pay, payLbl: payObj?.label || '',
-            lines: [...lines], totals: {...totals, vg:{...totals.vg}},
-            mark, uid, auth, qrUrl, env,
-          });
-          setHistory(h=>{ const next = [{uid:uid||'—',mark:mark||'—',type:itype,gross:totals.gross,date:new Date().toLocaleTimeString('el'),aa},...h.slice(0,19)]; saveHistory(next); return next; });
-          setAa(n=>{ const next = n+1; saveAA(cr.series, next); return next; });
-          // Reset lines
+        if (statusCode==='Error'||errMatch) { log(`✗ ΑΑΔΕ: ${errMatch?.[1]||'Σφάλμα'}`, 'err'); setResp({ok:false,raw:text,status:'ΑΑΔΕ Error'}); }
+        else {
+          const ex = tag => { const re=new RegExp('<(?:[\\w]+:)?'+tag+'>([^<]+)</(?:[\\w]+:)?'+tag+'>','i'); return text.match(re)?.[1]||null; };
+          const uid=ex('invoiceUid'), mark=ex('invoiceMark'), qrUrl=ex('qrUrl'), auth=ex('authenticationCode');
+          log(`✓ MARK: ${mark||'N/A'}`, 'ok');
+          setResp({ok:true,uid,mark,qrUrl,auth,raw:text});
+          const typeObj=TYPES.find(t=>t.code===itype), payObj=PAY.find(p2=>p2.code===pay);
+          setLastInvoice({ afm:cr.afm, branch:cr.branch, series:cr.series, aa, date:new Date().toISOString().slice(0,10), type:itype, typeLbl:typeObj?.label||itype, pay, payLbl:payObj?.label||'', lines:[...lines], totals:{...totals,vg:{...totals.vg}}, mark, uid, auth, qrUrl, env, cp:counterpart?{...counterpart}:null });
+          setHistory(h=>{ const next=[{uid:uid||'—',mark:mark||'—',type:itype,gross:totals.gross,date:new Date().toLocaleTimeString('el'),aa},...h.slice(0,19)]; saveHistory(next); return next; });
+          setAa(n=>{ const next=n+1; saveAA(cr.series,next); return next; });
           setLines([nL()]);
         }
-      } else {
-        log(`✗ HTTP ${r.status}`, 'err');
-        setResp({ ok:false, raw:text, status:r.status });
-      }
-    } catch(e) {
-      log(`✗ ${e.message}`, 'err');
-      setResp({ ok:false, raw:e.message, status:'ERROR' });
-    }
+      } else { log(`✗ HTTP ${r.status}`,'err'); setResp({ok:false,raw:text,status:r.status}); }
+    } catch(e) { log(`✗ ${e.message}`,'err'); setResp({ok:false,raw:e.message,status:'ERROR'}); }
     setLoading(false);
   };
 
@@ -586,91 +395,74 @@ function App() {
 
   return (
     <div className="app">
-      {/* Top nav */}
       <div className="topnav">
-        <div className="nav-logo">
-          <div className="logo-badge">myDATA</div>
-          <div className="logo-title">Αποδείξεις</div>
-        </div>
+        <div className="nav-logo"><div className="logo-badge">myDATA</div><div className="logo-title">Αποδείξεις</div></div>
         <div style={{display:'flex',alignItems:'center',gap:10}}>
-          <div className="nav-status">
-            <div className={`sdot${ready?' on':''}`}/>
-            {ready ? env.toUpperCase() : 'Ρυθμίσεις'}
-          </div>
-          <button style={{background:'none',border:'1px solid var(--border)',color:'var(--text-muted)',fontFamily:'var(--mono)',fontSize:11,padding:'5px 10px',cursor:'pointer'}}
-            onClick={()=>setShowSettings(true)}>⚙</button>
+          <div className="nav-status"><div className={`sdot${ready?' on':''}`}/>{ready?env.toUpperCase():'Ρυθμίσεις'}</div>
+          <button className="nav-btn" onClick={()=>setShowSettings(true)}>⚙</button>
         </div>
       </div>
-
-      {/* Env bar */}
       <div className="env-bar">
-        <button className={`env-btn${env==='test'?' active':''}`} onClick={()=>setEnv('test')}>TEST</button>
+        <button className={`env-btn${env==='test'?' active':''}`} onClick={()=>setEnv('test')}>ΔΟΚΙΜΑΣΤΙΚΟ</button>
         <button className={`env-btn${env==='prod'?' active':''}`} onClick={()=>setEnv('prod')}>ΠΑΡΑΓΩΓΗ</button>
       </div>
-
-      {/* Main content */}
       <div className="content">
-
-        {/* Response */}
         {resp && (
           <div className={`resp-card ${resp.ok?'resp-ok':'resp-err'}`}>
             <div className="resp-head">
-              <div className="card-num">{resp.ok?'✓':'✗'}</div>
+              <div style={{fontSize:16}}>{resp.ok?'✓':'✗'}</div>
               <div className={`resp-mark ${resp.ok?'ok':'er'}`}>{resp.ok?'Επιτυχής Υποβολή':`Σφάλμα ${resp.status}`}</div>
             </div>
             <div className="resp-body">
-              {resp.ok ? (
-                <>
-                  {resp.mark && <><div style={{fontSize:9,color:'var(--text-muted)'}}>ΜΑΡΚ</div><div className="uid" style={{fontSize:14,fontWeight:600}}>{resp.mark}</div></>}
-                  {resp.uid && <><div style={{fontSize:9,color:'var(--text-muted)',marginTop:8}}>UID</div><div className="uid">{resp.uid}</div></>}
-                  {resp.auth && <><div style={{fontSize:9,color:'var(--text-muted)',marginTop:8}}>Auth. Code</div><div className="uid">{resp.auth}</div></>}
-                  {resp.qrUrl && <><div style={{fontSize:9,color:'var(--text-muted)',marginTop:8}}>QR URL</div><div className="uid"><a href={resp.qrUrl} target="_blank" rel="noopener" style={{color:'var(--accent)'}}>{resp.qrUrl}</a></div></>}
-                  <div ref={qrRef} style={{marginTop:12,display:'flex',justifyContent:'center'}}/>
-                  <div style={{display:'flex',gap:8,marginTop:14}}>
-                    <button className="btn-pdf" onClick={downloadPDF} style={{padding:'10px 16px',fontSize:12}}>↓ PDF</button>
-                    <button className="btn-wa" onClick={shareWhatsApp} style={{padding:'10px 16px',fontSize:12}}>
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.625.846 5.059 2.284 7.034L.789 23.492a.5.5 0 00.613.613l4.458-1.495A11.952 11.952 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-2.319 0-4.476-.678-6.305-1.834l-.44-.282-3.28 1.1 1.1-3.28-.282-.44A9.956 9.956 0 012 12C2 6.486 6.486 2 12 2s10 4.486 10 10-4.486 10-10 10z"/></svg>
-                      WhatsApp
-                    </button>
-                  </div>
-                </>
-              ) : (
-                <pre style={{fontSize:10,color:'var(--red)',whiteSpace:'pre-wrap',wordBreak:'break-word'}}>{resp.raw}</pre>
-              )}
+              {resp.ok ? (<>
+                {resp.mark && <><div style={{fontSize:9,color:'var(--text-muted)',fontWeight:600}}>ΜΑΡΚ</div><div className="uid" style={{fontSize:14,fontWeight:700,color:'var(--blue)'}}>{resp.mark}</div></>}
+                {resp.uid && <><div style={{fontSize:9,color:'var(--text-muted)',marginTop:8,fontWeight:600}}>UID</div><div className="uid">{resp.uid}</div></>}
+                {resp.auth && <><div style={{fontSize:9,color:'var(--text-muted)',marginTop:8,fontWeight:600}}>Auth</div><div className="uid">{resp.auth}</div></>}
+                {resp.qrUrl && <><div style={{fontSize:9,color:'var(--text-muted)',marginTop:8,fontWeight:600}}>QR URL</div><div className="uid"><a href={resp.qrUrl} target="_blank" style={{color:'var(--blue)'}}>{resp.qrUrl}</a></div></>}
+                <div ref={qrRef} style={{marginTop:12,display:'flex',justifyContent:'center'}}/>
+                <div style={{display:'flex',gap:8,marginTop:14}}>
+                  <button className="btn-pdf" onClick={downloadPDF} style={{padding:'10px 16px',fontSize:12}}>↓ PDF</button>
+                  <button className="btn-wa" onClick={shareWhatsApp} style={{padding:'10px 16px',fontSize:12}}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.625.846 5.059 2.284 7.034L.789 23.492a.5.5 0 00.613.613l4.458-1.495A11.952 11.952 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-2.319 0-4.476-.678-6.305-1.834l-.44-.282-3.28 1.1 1.1-3.28-.282-.44A9.956 9.956 0 012 12C2 6.486 6.486 2 12 2s10 4.486 10 10-4.486 10-10 10z"/></svg>
+                    WhatsApp
+                  </button>
+                </div>
+              </>) : (<pre style={{fontSize:10,color:'var(--red)',whiteSpace:'pre-wrap',wordBreak:'break-word'}}>{resp.raw}</pre>)}
             </div>
           </div>
         )}
 
-        {/* Invoice type + payment */}
         <div className="card">
           <div className="card-head"><div className="card-num">01</div><div className="card-title">Παραστατικό</div></div>
           <div className="card-body">
-            <div className="field">
-              <div className="field-label">Τύπος <span>*</span></div>
-              <select className="field-sel" value={itype} onChange={e=>setItype(e.target.value)}>
-                {TYPES.map(t=><option key={t.code} value={t.code}>{t.label}</option>)}
-              </select>
-            </div>
-            <div className="field">
-              <div className="field-label">Πληρωμή <span>*</span></div>
-              <select className="field-sel" value={pay} onChange={e=>setPay(Number(e.target.value))}>
-                {PAY.map(p=><option key={p.code} value={p.code}>{p.label}</option>)}
-              </select>
-            </div>
+            <div className="field"><div className="field-label">Τύπος <span>*</span></div><select className="field-sel" value={itype} onChange={e=>setItype(e.target.value)}>{TYPES.map(t=><option key={t.code} value={t.code}>{t.label}</option>)}</select></div>
+            <div className="field"><div className="field-label">Πληρωμή <span>*</span></div><select className="field-sel" value={pay} onChange={e=>setPay(Number(e.target.value))}>{PAY.map(p=><option key={p.code} value={p.code}>{p.label}</option>)}</select></div>
             <div className="row2">
-              <div className="field">
-                <div className="field-label">Σειρά</div>
-                <input className="field-input" value={cr.series} onChange={e=>{setC('series',e.target.value);setAa(loadAA(e.target.value));}} placeholder="A"/>
-              </div>
-              <div className="field">
-                <div className="field-label">ΑΑ</div>
-                <input className="field-input" type="number" value={aa} onChange={e=>{const v=Number(e.target.value);setAa(v);saveAA(cr.series,v);}}/>
-              </div>
+              <div className="field"><div className="field-label">Σειρά</div><input className="field-input" value={cr.series} onChange={e=>{setC('series',e.target.value);setAa(loadAA(e.target.value));}} placeholder="A"/></div>
+              <div className="field"><div className="field-label">ΑΑ</div><input className="field-input" type="number" value={aa} onChange={e=>{const v=Number(e.target.value);setAa(v);saveAA(cr.series,v);}}/></div>
             </div>
           </div>
         </div>
 
-        {/* Lines */}
+        {/* Counterpart - optional */}
+        <div className="card">
+          <div className="card-body" style={{padding:'10px 14px'}}>
+            <button className="coll-toggle" onClick={()=>setShowCp(!showCp)}>
+              <span className={`arr${showCp?' open':''}`}>▶</span>
+              Στοιχεία Πελάτη (προαιρετικά)
+            </button>
+            {showCp && (
+              <div className="coll-body">
+                <div className="field"><div className="field-label">Επωνυμία</div><input className="field-input" placeholder="Ονοματεπώνυμο / Εταιρεία" value={cp.name} onChange={e=>setCp(p=>({...p,name:e.target.value}))}/></div>
+                <div className="row2">
+                  <div className="field"><div className="field-label">ΑΦΜ Πελάτη</div><input className="field-input" placeholder="Προαιρετικό" value={cp.afm} onChange={e=>setCp(p=>({...p,afm:e.target.value}))}/></div>
+                  <div className="field"><div className="field-label">Χώρα</div><input className="field-input" value={cp.country} onChange={e=>setCp(p=>({...p,country:e.target.value}))}/></div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
         <div className="card">
           <div className="card-head"><div className="card-num">02</div><div className="card-title">Είδη / Υπηρεσίες</div></div>
           <div className="card-body">
@@ -682,25 +474,11 @@ function App() {
                   {lines.length>1 && <button className="line-del" onClick={()=>rem(l.id)}>×</button>}
                   <input className="line-desc" placeholder={`Είδος / Υπηρεσία ${i+1}...`} value={l.desc} onChange={e=>upd(l.id,'desc',e.target.value)}/>
                   <div className="line-nums">
-                    <div className="line-num-field">
-                      <div className="line-num-label">Ποσ.</div>
-                      <input className="line-num-input" type="number" min="0" step="0.01" value={l.qty} onChange={e=>upd(l.id,'qty',e.target.value)}/>
-                    </div>
-                    <div className="line-num-field">
-                      <div className="line-num-label">Τιμή (χ/ΦΠΑ)</div>
-                      <input className="line-num-input" type="number" min="0" step="0.01" placeholder="0.00" value={l.price} onChange={e=>upd(l.id,'price',e.target.value)}/>
-                    </div>
-                    <div className="line-num-field">
-                      <div className="line-num-label">ΦΠΑ</div>
-                      <select className="line-num-input" value={l.vat} onChange={e=>upd(l.id,'vat',Number(e.target.value))}>
-                        {VAT.map(v=><option key={v.code} value={v.code}>{v.label}</option>)}
-                      </select>
-                    </div>
+                    <div className="line-num-field"><div className="line-num-label">Ποσ.</div><input className="line-num-input" type="number" min="0" step="0.01" value={l.qty} onChange={e=>upd(l.id,'qty',e.target.value)}/></div>
+                    <div className="line-num-field"><div className="line-num-label">Τιμή (χ/ΦΠΑ)</div><input className="line-num-input" type="number" min="0" step="0.01" placeholder="0.00" value={l.price} onChange={e=>upd(l.id,'price',e.target.value)}/></div>
+                    <div className="line-num-field"><div className="line-num-label">ΦΠΑ</div><select className="line-num-input" value={l.vat} onChange={e=>upd(l.id,'vat',Number(e.target.value))}>{VAT.map(v=><option key={v.code} value={v.code}>{v.label}</option>)}</select></div>
                   </div>
-                  <div className="line-footer">
-                    <div style={{fontSize:9,color:'var(--text-dim)'}}>ΦΠΑ {vc?.label}</div>
-                    <div className="line-total">{fmt(gross)}</div>
-                  </div>
+                  <div className="line-footer"><div style={{fontSize:9,color:'var(--text-muted)'}}>ΦΠΑ {vc?.label}</div><div className="line-total">{fmt(gross)}</div></div>
                 </div>
               );
             })}
@@ -708,116 +486,43 @@ function App() {
           </div>
         </div>
 
-        {/* Summary */}
         <div className="card" style={{marginBottom:0}}>
           <div className="card-head"><div className="card-num">03</div><div className="card-title">Σύνοψη</div></div>
           <div className="sum-row"><span className="sum-label">Καθαρή Αξία</span><span className="sum-val">{fmt(totals.net)}</span></div>
-          {Object.entries(totals.vg).map(([cat,{net,vat}])=>{
-            const vi=VAT.find(v=>v.code===Number(cat));
-            return <div className="vat-sub" key={cat}><span>ΦΠΑ {vi?.label} επί {fmt(net)}</span><span>{fmt(vat)}</span></div>;
-          })}
+          {Object.entries(totals.vg).map(([cat,{net,vat}])=>{ const vi=VAT.find(v=>v.code===Number(cat)); return <div className="vat-sub" key={cat}><span>ΦΠΑ {vi?.label} επί {fmt(net)}</span><span>{fmt(vat)}</span></div>; })}
           <div className="sum-row"><span className="sum-label">Σύνολο ΦΠΑ</span><span className="sum-val">{fmt(totals.vat)}</span></div>
           <div className="sum-row sum-total"><span className="sum-label">ΣΥΝΟΛΟ ΠΛΗΡΩΤΕΟ</span><span className="sum-val">{fmt(totals.gross)}</span></div>
         </div>
 
-        {/* Log */}
-        {logs.length>0 && (
-          <div className="card" style={{marginTop:12}}>
-            <div className="card-head"><div className="card-num">LOG</div><div className="card-title">Αρχείο</div></div>
-            <div className="log-wrap">
-              {logs.map((l,i)=>(
-                <div className="log-line" key={i}>
-                  <span className="log-t">{l.t}</span>
-                  <span className={l.type==='ok'?'log-ok':l.type==='err'?'log-er':''}>{l.msg}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+        {logs.length>0 && (<div className="card" style={{marginTop:12}}><div className="card-head"><div className="card-num">LOG</div><div className="card-title">Αρχείο</div></div><div className="log-wrap">{logs.map((l,i)=>(<div className="log-line" key={i}><span className="log-t">{l.t}</span><span className={l.type==='ok'?'log-ok':l.type==='err'?'log-er':''}>{l.msg}</span></div>))}</div></div>)}
 
-        {/* History */}
-        {history.length>0 && (
-          <div className="card" style={{marginTop:12}}>
-            <div className="card-head"><div className="card-num">ΙΣΤΟΡΙΚΟ</div><div className="card-title">Εκδόσεις</div></div>
-            <div style={{padding:'8px 12px'}}>
-              {history.map((h,i)=>(
-                <div key={i} style={{padding:'8px 4px',borderBottom:'1px solid var(--border)',fontSize:11}}>
-                  <span style={{color:'var(--accent)',fontWeight:600}}>{h.type} #{h.aa}</span>
-                  <span style={{color:'var(--text-muted)',marginLeft:10}}>{h.date} · {fmt(h.gross)}</span>
-                  {h.mark && h.mark!=='—' && <div style={{fontSize:10,color:'var(--accent)',marginTop:2}}>MARK: {h.mark}</div>}
-                  <div style={{fontSize:9,color:'var(--text-dim)',marginTop:2,wordBreak:'break-all'}}>{h.uid}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
+        {history.length>0 && (<div className="card" style={{marginTop:12}}><div className="card-head"><div className="card-num">ΙΣΤΟΡΙΚΟ</div><div className="card-title">Εκδόσεις</div></div><div style={{padding:'8px 12px'}}>{history.map((h,i)=>(<div key={i} style={{padding:'8px 4px',borderBottom:'1px solid #eef0f2',fontSize:11}}><span style={{color:'var(--blue)',fontWeight:600}}>{h.type} #{h.aa}</span><span style={{color:'var(--text-secondary)',marginLeft:10}}>{h.date} · {fmt(h.gross)}</span>{h.mark&&h.mark!=='—'&&<div style={{fontSize:10,color:'var(--blue)',marginTop:2,fontFamily:'var(--mono)'}}>MARK: {h.mark}</div>}<div style={{fontSize:9,color:'var(--text-muted)',marginTop:2,wordBreak:'break-all',fontFamily:'var(--mono)'}}>{h.uid}</div></div>))}</div></div>)}
       </div>
 
-      {/* Bottom action bar */}
       <div className="bottom-bar">
         <button className="btn-xml" onClick={()=>setShowXml(true)}>XML</button>
-        <button className="btn-pdf" onClick={downloadPDF} disabled={!lastInvoice} title="Λήψη PDF">PDF</button>
-        <button className="btn-wa" onClick={shareWhatsApp} disabled={!lastInvoice} title="Κοινοποίηση WhatsApp">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.625.846 5.059 2.284 7.034L.789 23.492a.5.5 0 00.613.613l4.458-1.495A11.952 11.952 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-2.319 0-4.476-.678-6.305-1.834l-.44-.282-3.28 1.1 1.1-3.28-.282-.44A9.956 9.956 0 012 12C2 6.486 6.486 2 12 2s10 4.486 10 10-4.486 10-10 10z"/></svg>
-          WA
-        </button>
-        <button className="btn-send" onClick={submit} disabled={!canSubmit||loading}>
-          {loading ? <><span className="spinner"/>Αποστολή...</> : '→ Αποστολή στην ΑΑΔΕ'}
-        </button>
+        <button className="btn-pdf" onClick={downloadPDF} disabled={!lastInvoice}>PDF</button>
+        <button className="btn-wa" onClick={shareWhatsApp} disabled={!lastInvoice}><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.625.846 5.059 2.284 7.034L.789 23.492a.5.5 0 00.613.613l4.458-1.495A11.952 11.952 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-2.319 0-4.476-.678-6.305-1.834l-.44-.282-3.28 1.1 1.1-3.28-.282-.44A9.956 9.956 0 012 12C2 6.486 6.486 2 12 2s10 4.486 10 10-4.486 10-10 10z"/></svg>WA</button>
+        <button className="btn-send" onClick={submit} disabled={!canSubmit||loading}>{loading?<><span className="spinner"/>Αποστολή...</>:'Αποστολή ΑΑΔΕ'}</button>
       </div>
 
-      {/* XML Modal */}
-      {showXml && (
-        <div className="modal-overlay" onClick={()=>setShowXml(false)}>
-          <div className="modal" onClick={e=>e.stopPropagation()}>
-            <div className="modal-head">
-              <div className="modal-title">XML Payload</div>
-              <div style={{display:'flex',gap:8}}>
-                <button className="modal-close" onClick={()=>navigator.clipboard.writeText(xml)}>copy</button>
-                <button className="modal-close" onClick={()=>setShowXml(false)}>✕</button>
-              </div>
-            </div>
-            <pre className="xml-pre">{xml}</pre>
+      {showXml && (<div className="modal-overlay" onClick={()=>setShowXml(false)}><div className="modal" onClick={e=>e.stopPropagation()}><div className="modal-head"><div className="modal-title">XML Payload</div><div style={{display:'flex',gap:8}}><button className="modal-close" onClick={()=>navigator.clipboard.writeText(xml)}>copy</button><button className="modal-close" onClick={()=>setShowXml(false)}>✕</button></div></div><pre className="xml-pre">{xml}</pre></div></div>)}
+
+      {showSettings && (<>
+        <div className="drawer-overlay" onClick={()=>setShowSettings(false)}/>
+        <div className="drawer">
+          <div className="drawer-handle"/>
+          <div className="drawer-title">Στοιχεία Σύνδεσης ΑΑΔΕ</div>
+          <div className="drawer-body">
+            <div className="field"><div className="field-label">AADE User ID <span>*</span></div><input className="field-input" placeholder="myDATA username" value={cr.user} onChange={e=>setC('user',e.target.value)}/></div>
+            <div className="field"><div className="field-label">Subscription Key <span>*</span></div><input className="field-input" type="password" placeholder="API Key" value={cr.key} onChange={e=>setC('key',e.target.value)}/></div>
+            <div className="field"><div className="field-label">ΑΦΜ Εκδότη <span>*</span></div><input className="field-input" placeholder="9ψήφιο ΑΦΜ" value={cr.afm} onChange={e=>setC('afm',e.target.value)}/></div>
+            <div className="row2"><div className="field"><div className="field-label">Παράρτημα</div><input className="field-input" placeholder="0" value={cr.branch} onChange={e=>setC('branch',e.target.value)}/></div></div>
+            <div style={{marginTop:8,padding:'10px 12px',background:'var(--blue-bg)',border:'1px solid var(--blue)',borderRadius:6,fontSize:11,color:'var(--blue)',lineHeight:1.7}}>Τα στοιχεία αποθηκεύονται τοπικά στον browser σου.</div>
+            <button style={{marginTop:16,width:'100%',background:'var(--blue)',border:'none',color:'#fff',fontFamily:'var(--sans)',fontSize:14,fontWeight:700,padding:13,cursor:'pointer',borderRadius:6}} onClick={()=>setShowSettings(false)}>Αποθήκευση</button>
           </div>
         </div>
-      )}
-
-      {/* Settings Drawer */}
-      {showSettings && (
-        <>
-          <div className="drawer-overlay" onClick={()=>setShowSettings(false)}/>
-          <div className="drawer">
-            <div className="drawer-handle"/>
-            <div className="drawer-title">Στοιχεία Σύνδεσης ΑΑΔΕ</div>
-            <div className="drawer-body">
-              <div className="field">
-                <div className="field-label">AADE User ID <span>*</span></div>
-                <input className="field-input" placeholder="myDATA username" value={cr.user} onChange={e=>setC('user',e.target.value)}/>
-              </div>
-              <div className="field">
-                <div className="field-label">Subscription Key <span>*</span></div>
-                <input className="field-input" type="password" placeholder="API Key" value={cr.key} onChange={e=>setC('key',e.target.value)}/>
-              </div>
-              <div className="field">
-                <div className="field-label">ΑΦΜ Εκδότη <span>*</span></div>
-                <input className="field-input" placeholder="9ψήφιο ΑΦΜ" value={cr.afm} onChange={e=>setC('afm',e.target.value)}/>
-              </div>
-              <div className="row2">
-                <div className="field">
-                  <div className="field-label">Παράρτημα</div>
-                  <input className="field-input" placeholder="0" value={cr.branch} onChange={e=>setC('branch',e.target.value)}/>
-                </div>
-              </div>
-              <div style={{marginTop:4,padding:'10px 12px',background:'var(--accent-dim)',border:'1px solid var(--accent)',fontSize:10,color:'var(--accent)',lineHeight:1.7}}>
-                Τα στοιχεία αποθηκεύονται τοπικά στον browser σου.
-              </div>
-              <button style={{marginTop:16,width:'100%',background:'var(--accent)',border:'none',color:'#000',fontFamily:'var(--sans)',fontSize:14,fontWeight:700,padding:14,cursor:'pointer'}}
-                onClick={()=>setShowSettings(false)}>Αποθήκευση</button>
-            </div>
-          </div>
-        </>
-      )}
+      </>)}
     </div>
   );
 }
