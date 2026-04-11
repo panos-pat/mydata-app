@@ -191,8 +191,8 @@ const fmt = n => n.toFixed(2).replace('.',',') + ' €';
 const nL = () => ({ id:Date.now()+Math.random(), desc:'', qty:'1', price:'', vat:1 });
 
 const AA_KEY = 'mydata_aa';
-function loadAA(s) { try { return (JSON.parse(localStorage.getItem(AA_KEY))||{})[s||'A']||1; } catch { return 1; } }
-function saveAA(s,v) { try { const d=JSON.parse(localStorage.getItem(AA_KEY))||{}; d[s||'A']=v; localStorage.setItem(AA_KEY,JSON.stringify(d)); } catch{} }
+function loadAA(s,t) { try { return (JSON.parse(localStorage.getItem(AA_KEY))||{})[`${s||'A'}_${t||'11.1'}`]||1; } catch { return 1; } }
+function saveAA(s,t,v) { try { const d=JSON.parse(localStorage.getItem(AA_KEY))||{}; d[`${s||'A'}_${t||'11.1'}`]=v; localStorage.setItem(AA_KEY,JSON.stringify(d)); } catch{} }
 const HIST_KEY = 'mydata_history';
 function loadHistory() { try { return JSON.parse(localStorage.getItem(HIST_KEY))||[]; } catch { return []; } }
 function saveHistory(h) { try { localStorage.setItem(HIST_KEY,JSON.stringify(h.slice(0,100))); } catch{} }
@@ -288,7 +288,7 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [resp, setResp] = useState(null);
   const [history, setHistory] = useState(()=>loadHistory());
-  const [aa, setAa] = useState(()=>loadAA(saved.series||'A'));
+  const [aa, setAa] = useState(()=>loadAA(saved.series||'A','11.1'));
   const [showXml, setShowXml] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [logs, setLogs] = useState([]);
@@ -431,7 +431,8 @@ function App() {
     setPay(d.pay || 2);
     setLines(d.lines.map(l => ({ ...l, id: Date.now()+Math.random() })));
     if (d.cp) { setCp(d.cp); if (d.cp.name || d.cp.afm || d.cp.phone) setShowCp(true); }
-    // Don't override AA - keep current sequential number
+    // Load correct AA for this type
+    setAa(loadAA(cr.series, d.itype || '11.1'));
     setLoadedDraftIdx(idx);
     log(`Φορτώθηκε πρόχειρο: ${d.label}`, 'ok');
   };
@@ -480,7 +481,7 @@ function App() {
           const fullInv = { afm:cr.afm, branch:cr.branch, series:cr.series, aa, date:new Date().toISOString().slice(0,10), type:itype, typeLbl:typeObj?.label||itype, pay, payLbl:payObj?.label||'', lines:[...lines], totals:{...totals,vg:{...totals.vg}}, mark, uid, auth, qrUrl, env, cp:counterpart?{...counterpart}:null, biz:{ name:cr.bizName||'', title:cr.bizTitle||'', activity:cr.bizActivity||'', address:cr.bizAddress||'', phone:cr.bizPhone||'' } };
           setLastInvoice(fullInv);
           setHistory(h=>{ const next=[fullInv,...h.slice(0,99)]; saveHistory(next); return next; });
-          setAa(n=>{ const next=n+1; saveAA(cr.series,next); return next; });
+          setAa(n=>{ const next=n+1; saveAA(cr.series,itype,next); return next; });
           setLines([nL()]);
           // Auto-delete draft if loaded from drafts
           if (loadedDraftIdx !== null) { deleteDraft(loadedDraftIdx); setLoadedDraftIdx(null); }
@@ -534,11 +535,11 @@ function App() {
         <div className="card">
           <div className="card-head"><div className="card-num">01</div><div className="card-title">Παραστατικό</div></div>
           <div className="card-body">
-            <div className="field"><div className="field-label">Τύπος <span>*</span></div><select className="field-sel" value={itype} onChange={e=>setItype(e.target.value)}>{TYPES.map(t=><option key={t.code} value={t.code}>{t.label}</option>)}</select></div>
+            <div className="field"><div className="field-label">Τύπος <span>*</span></div><select className="field-sel" value={itype} onChange={e=>{setItype(e.target.value);setAa(loadAA(cr.series,e.target.value));}}>{TYPES.map(t=><option key={t.code} value={t.code}>{t.label}</option>)}</select></div>
             <div className="field"><div className="field-label">Πληρωμή <span>*</span></div><select className="field-sel" value={pay} onChange={e=>setPay(Number(e.target.value))}>{PAY.map(p=><option key={p.code} value={p.code}>{p.label}</option>)}</select></div>
             <div className="row2">
-              <div className="field"><div className="field-label">Σειρά</div><input className="field-input" value={cr.series} onChange={e=>{setC('series',e.target.value);setAa(loadAA(e.target.value));}} placeholder="A"/></div>
-              <div className="field"><div className="field-label">ΑΑ</div><input className="field-input" type="number" value={aa} onChange={e=>{const v=Number(e.target.value);setAa(v);saveAA(cr.series,v);}}/></div>
+              <div className="field"><div className="field-label">Σειρά</div><input className="field-input" value={cr.series} onChange={e=>{setC('series',e.target.value);setAa(loadAA(e.target.value,itype));}} placeholder="A"/></div>
+              <div className="field"><div className="field-label">ΑΑ</div><input className="field-input" type="number" value={aa} onChange={e=>{const v=Number(e.target.value);setAa(v);saveAA(cr.series,itype,v);}}/></div>
             </div>
           </div>
         </div>
