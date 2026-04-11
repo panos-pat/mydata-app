@@ -188,7 +188,7 @@ const PAY = [
 ];
 const esc = s => (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 const fmt = n => n.toFixed(2).replace('.',',') + ' €';
-const nL = () => ({ id:Date.now()+Math.random(), desc:'', qty:'1', price:'', vat:1 });
+const nL = () => ({ id:Date.now()+Math.random(), desc:'', qty:'1', price:'', vat:2 });
 
 const AA_KEY = 'mydata_aa';
 function loadAA(s,t) { try { return (JSON.parse(localStorage.getItem(AA_KEY))||{})[`${s||'A'}_${t||'11.1'}`]||1; } catch { return 1; } }
@@ -282,13 +282,13 @@ function App() {
   const saved = loadCreds();
   const [cr, setCr] = useState({ user:saved.user||'', key:saved.key||'', afm:saved.afm||'', branch:saved.branch||'0', series:saved.series||'A', bizName:saved.bizName||'', bizTitle:saved.bizTitle||'', bizActivity:saved.bizActivity||'', bizAddress:saved.bizAddress||'', bizPhone:saved.bizPhone||'' });
   const [env, setEnv] = useState('test');
-  const [itype, setItype] = useState('11.1');
+  const [itype, setItype] = useState('11.2');
   const [pay, setPay] = useState(2);
   const [lines, setLines] = useState([nL()]);
   const [loading, setLoading] = useState(false);
   const [resp, setResp] = useState(null);
   const [history, setHistory] = useState(()=>loadHistory());
-  const [aa, setAa] = useState(()=>loadAA(saved.series||'A','11.1'));
+  const [aa, setAa] = useState(()=>loadAA(saved.series||'A','11.2'));
   const [showXml, setShowXml] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [logs, setLogs] = useState([]);
