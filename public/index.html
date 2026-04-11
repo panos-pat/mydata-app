@@ -300,7 +300,32 @@ function App() {
   const [drafts, setDrafts] = useState(()=>loadDrafts());
   const [loadedDraftIdx, setLoadedDraftIdx] = useState(null);
   const [services, setServices] = useState(()=>loadServices());
-  const [newSvc, setNewSvc] = useState(''); // track which draft is loaded
+  const [newSvc, setNewSvc] = useState('');
+  const LOGO_KEY = 'mydata_logo';
+  const [logo, setLogo] = useState(()=>{ try { return localStorage.getItem(LOGO_KEY)||''; } catch { return ''; } });
+
+  const handleLogoUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const max = 200;
+        let w = img.width, h = img.height;
+        if (w > max || h > max) { const r = Math.min(max/w, max/h); w*=r; h*=r; }
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        const b64 = canvas.toDataURL('image/png', 0.8);
+        setLogo(b64);
+        try { localStorage.setItem(LOGO_KEY, b64); } catch {}
+      };
+      img.src = ev.target.result;
+    };
+    reader.readAsDataURL(file);
+  };
+  const removeLogo = () => { setLogo(''); try { localStorage.removeItem(LOGO_KEY); } catch {} }; // track which draft is loaded
 
   useEffect(() => {
     if (resp?.ok && qrRef.current) {
@@ -321,26 +346,115 @@ function App() {
     const inv = lastInvoice;
     if (!inv) return;
     const fmtE = n => n.toFixed(2).replace('.',',') + ' €';
-    const vatRows = Object.entries(inv.totals.vg).map(([cat,{net,vat}]) => {
-      const vi = VAT.find(v=>v.code===Number(cat));
-      return `<tr><td style="color:#656d76;font-size:11px;padding:3px 0;">ΦΠΑ ${vi?.label} επί ${fmtE(net)}</td><td style="text-align:right;font-size:11px;padding:3px 0;">${fmtE(vat)}</td></tr>`;
-    }).join('');
+    const invoiceLogo = inv.logo || logo || '';
+
     const lineRows = inv.lines.map((l,i) => {
       const vc = VAT.find(v=>v.code===Number(l.vat));
       const net = (parseFloat(l.qty)||0)*(parseFloat(l.price)||0);
       const vatAmt = net*(vc?.rate||0);
-      return `<tr style="border-bottom:1px solid #e5e7eb;"><td style="padding:7px 6px;color:#656d76;">${i+1}</td><td style="padding:7px 6px;">${l.desc}</td><td style="padding:7px 6px;text-align:center;">${parseFloat(l.qty)||0}</td><td style="padding:7px 6px;text-align:right;">${fmtE(parseFloat(l.price)||0)}</td><td style="padding:7px 6px;text-align:center;color:#656d76;">${vc?.label||'24%'}</td><td style="padding:7px 6px;text-align:right;font-weight:600;">${fmtE(net+vatAmt)}</td></tr>`;
+      const bgc = i%2===0 ? '#f8f9fa' : '#fff';
+      return `<tr style="background:${bgc};"><td style="padding:8px 6px;color:#656d76;border-bottom:1px dashed #e5e7eb;">${i+1}</td><td style="padding:8px 6px;border-bottom:1px dashed #e5e7eb;">${l.desc}</td><td style="padding:8px 6px;text-align:center;border-bottom:1px dashed #e5e7eb;">${parseFloat(l.qty)||0}</td><td style="padding:8px 6px;text-align:right;border-bottom:1px dashed #e5e7eb;">${fmtE(parseFloat(l.price)||0)}</td><td style="padding:8px 6px;text-align:center;color:#656d76;border-bottom:1px dashed #e5e7eb;">${vc?.label||'24%'}</td><td style="padding:8px 6px;text-align:right;font-weight:600;border-bottom:1px dashed #e5e7eb;">${fmtE(net+vatAmt)}</td></tr>`;
     }).join('');
-    const cpHtml = inv.cp && (inv.cp.name||inv.cp.afm) ? `<div style="padding:12px 32px;border-bottom:1px solid #e5e7eb;font-size:12px;"><div style="color:#656d76;font-size:9px;font-weight:600;letter-spacing:0.08em;margin-bottom:4px;">ΣΤΟΙΧΕΙΑ ΠΕΛΑΤΗ</div>${inv.cp.name?`<div>Επωνυμία: <strong>${inv.cp.name}</strong></div>`:''} ${inv.cp.afm?`<div>ΑΦΜ: ${inv.cp.afm}</div>`:''}</div>` : '';
-    const html = `<div style="width:595px;min-height:842px;background:#fff;color:#1f2328;font-family:Inter,system-ui,sans-serif;position:relative;">
-      <div style="background:#003476;padding:24px 32px;color:#fff;"><div style="display:flex;justify-content:space-between;align-items:center;"><div style="display:flex;align-items:center;gap:14px;"><div style="background:#fff;color:#003476;font-weight:700;font-size:11px;padding:4px 10px;border-radius:3px;">myDATA</div><div style="font-size:16px;font-weight:700;">${inv.typeLbl}</div></div><div style="font-size:11px;opacity:0.8;">${inv.env==='prod'?'ΠΑΡΑΓΩΓΗ':'ΔΟΚΙΜΑΣΤΙΚΟ'}</div></div></div>
-      <div style="padding:16px 32px;display:flex;justify-content:space-between;border-bottom:1px solid #e5e7eb;font-size:12px;"><div><div style="color:#656d76;font-size:9px;font-weight:600;letter-spacing:0.08em;margin-bottom:4px;">ΕΚΔΟΤΗΣ</div>${inv.biz.name?`<div style="font-weight:700;font-size:13px;">${inv.biz.name}</div>`:''} ${inv.biz.title?`<div style="color:#003476;font-size:11px;">${inv.biz.title}</div>`:''}<div>ΑΦΜ: <strong>${inv.afm}</strong></div>${inv.biz.activity?`<div style="color:#656d76;font-size:11px;">${inv.biz.activity}</div>`:''} ${inv.biz.address?`<div style="color:#656d76;font-size:11px;">${inv.biz.address}</div>`:''} ${inv.biz.phone?`<div style="color:#656d76;font-size:11px;">Τηλ: ${inv.biz.phone}</div>`:''}</div><div style="text-align:right;"><div style="color:#656d76;font-size:9px;font-weight:600;letter-spacing:0.08em;margin-bottom:4px;">ΠΑΡΑΣΤΑΤΙΚΟ</div><div style="color:#003476;font-weight:700;font-size:14px;">${inv.series}-${inv.aa}</div><div style="color:#656d76;">${inv.date}</div></div></div>
-      ${cpHtml}
-      <div style="padding:8px 32px;border-bottom:1px solid #e5e7eb;font-size:11px;color:#656d76;">Πληρωμή: <strong style="color:#1f2328;">${inv.payLbl}</strong></div>
-      <div style="padding:16px 32px;"><table style="width:100%;border-collapse:collapse;font-size:12px;"><thead><tr style="border-bottom:2px solid #003476;"><th style="text-align:left;padding:6px;color:#656d76;font-size:9px;font-weight:600;">#</th><th style="text-align:left;padding:6px;color:#656d76;font-size:9px;font-weight:600;">ΠΕΡΙΓΡΑΦΗ</th><th style="text-align:center;padding:6px;color:#656d76;font-size:9px;font-weight:600;">ΠΟΣ.</th><th style="text-align:right;padding:6px;color:#656d76;font-size:9px;font-weight:600;">ΤΙΜΗ</th><th style="text-align:center;padding:6px;color:#656d76;font-size:9px;font-weight:600;">ΦΠΑ</th><th style="text-align:right;padding:6px;color:#656d76;font-size:9px;font-weight:600;">ΣΥΝΟΛΟ</th></tr></thead><tbody>${lineRows}</tbody></table></div>
-      <div style="padding:8px 32px 16px;"><table style="width:260px;margin-left:auto;border-collapse:collapse;font-size:12px;"><tr><td style="color:#656d76;padding:4px 0;">Καθαρή Αξία</td><td style="text-align:right;padding:4px 0;">${fmtE(inv.totals.net)}</td></tr>${vatRows}<tr><td style="color:#656d76;padding:4px 0;">Σύνολο ΦΠΑ</td><td style="text-align:right;padding:4px 0;">${fmtE(inv.totals.vat)}</td></tr><tr style="border-top:2px solid #003476;"><td style="color:#003476;font-weight:700;font-size:14px;padding:10px 0;">ΣΥΝΟΛΟ</td><td style="text-align:right;color:#003476;font-weight:700;font-size:14px;padding:10px 0;">${fmtE(inv.totals.gross)}</td></tr></table></div>
-      ${inv.mark ? `<div style="margin:0 32px;padding:14px 16px;background:#e8eef6;border:1px solid #003476;border-radius:6px;display:flex;justify-content:space-between;align-items:flex-start;"><div style="flex:1;"><div style="display:flex;gap:12px;align-items:baseline;"><div style="font-size:9px;color:#003476;font-weight:700;">MARK</div><div style="font-size:14px;color:#003476;font-weight:700;">${inv.mark}</div></div>${inv.uid?`<div style="margin-top:6px;font-size:9px;color:#656d76;">UID: <span style="color:#1f2328;">${inv.uid}</span></div>`:''} ${inv.auth?`<div style="margin-top:3px;font-size:9px;color:#656d76;">AUTH: <span style="color:#1f2328;">${inv.auth}</span></div>`:''} ${inv.qrUrl?`<div style="margin-top:3px;font-size:8px;color:#656d76;word-break:break-all;">${inv.qrUrl}</div>`:''}</div><div id="pdf-qr" style="margin-left:12px;flex-shrink:0;"></div></div>` : ''}
-      <div style="position:absolute;bottom:20px;left:0;right:0;text-align:center;font-size:9px;color:#8b949e;">Εκδόθηκε μέσω myDATA App  |  ${new Date().toLocaleString('el')}</div>
+
+    const vatAnalysis = Object.entries(inv.totals.vg).map(([cat,{net,vat}]) => {
+      const vi = VAT.find(v=>v.code===Number(cat));
+      return `<tr><td style="padding:3px 6px;font-size:10px;">ΦΠΑ ${vi?.label}</td><td style="padding:3px 6px;text-align:right;font-size:10px;">${fmtE(net)}</td><td style="padding:3px 6px;text-align:right;font-size:10px;">${fmtE(vat)}</td></tr>`;
+    }).join('');
+
+    const html = `<div style="width:595px;min-height:842px;background:#fff;color:#1f2328;font-family:Inter,system-ui,sans-serif;position:relative;font-size:11px;">
+      <!-- HEADER -->
+      <div style="background:#003476;padding:20px 28px;color:#fff;display:flex;justify-content:space-between;align-items:flex-start;">
+        <div style="flex:1;">
+          ${inv.biz.name ? `<div style="font-size:15px;font-weight:700;margin-bottom:3px;">${inv.biz.name}</div>` : ''}
+          ${inv.biz.title ? `<div style="font-size:10px;opacity:0.85;margin-bottom:2px;">${inv.biz.title}</div>` : ''}
+          ${inv.biz.activity ? `<div style="font-size:9px;opacity:0.7;">${inv.biz.activity}</div>` : ''}
+          ${inv.biz.address ? `<div style="font-size:9px;opacity:0.7;">${inv.biz.address}</div>` : ''}
+          <div style="font-size:9px;opacity:0.7;margin-top:2px;">ΑΦΜ ${inv.afm}${inv.biz.phone ? ' · Τηλ: '+inv.biz.phone : ''}</div>
+        </div>
+        ${invoiceLogo ? `<img src="${invoiceLogo}" style="max-width:120px;max-height:60px;object-fit:contain;"/>` : ''}
+      </div>
+
+      <!-- INFO BAR -->
+      <div style="background:#e8eef6;padding:8px 28px;display:flex;border-bottom:2px solid #003476;">
+        <div style="flex:1;"><div style="font-size:8px;color:#003476;font-weight:600;letter-spacing:0.06em;">ΤΥΠΟΣ</div><div style="font-size:10px;font-weight:600;margin-top:1px;">${inv.typeLbl}</div></div>
+        <div style="width:80px;"><div style="font-size:8px;color:#003476;font-weight:600;letter-spacing:0.06em;">ΑΡΙΘΜΟΣ</div><div style="font-size:10px;font-weight:700;color:#003476;margin-top:1px;">${inv.series}-${inv.aa}</div></div>
+        <div style="width:90px;"><div style="font-size:8px;color:#003476;font-weight:600;letter-spacing:0.06em;">ΗΜΕΡΟΜΗΝΙΑ</div><div style="font-size:10px;margin-top:1px;">${inv.date}</div></div>
+        <div style="width:70px;"><div style="font-size:8px;color:#003476;font-weight:600;letter-spacing:0.06em;">ΠΛΗΡΩΜΗ</div><div style="font-size:10px;margin-top:1px;">${inv.payLbl}</div></div>
+      </div>
+
+      <!-- CUSTOMER -->
+      ${inv.cp && (inv.cp.name||inv.cp.afm) ? `
+      <div style="padding:0 28px;">
+        <div style="background:#003476;color:#fff;font-size:8px;font-weight:600;padding:4px 10px;margin-top:12px;letter-spacing:0.06em;">ΣΤΟΙΧΕΙΑ ΠΕΛΑΤΗ</div>
+        <div style="padding:8px 10px;border:1px solid #e5e7eb;border-top:none;">
+          ${inv.cp.name ? `<div style="font-weight:600;">ΕΠΩΝΥΜΙΑ: ${inv.cp.name}</div>` : ''}
+          ${inv.cp.afm ? `<div>Α.Φ.Μ.: ${inv.cp.afm}</div>` : ''}
+          ${inv.cp.phone ? `<div>ΤΗΛ.: ${inv.cp.phone}</div>` : ''}
+        </div>
+      </div>` : ''}
+
+      <!-- ITEMS TABLE -->
+      <div style="padding:12px 28px 0;">
+        <table style="width:100%;border-collapse:collapse;font-size:11px;">
+          <thead><tr style="background:#003476;color:#fff;">
+            <th style="padding:7px 6px;text-align:left;font-size:8px;font-weight:600;letter-spacing:0.04em;">#</th>
+            <th style="padding:7px 6px;text-align:left;font-size:8px;font-weight:600;letter-spacing:0.04em;">ΠΕΡΙΓΡΑΦΗ</th>
+            <th style="padding:7px 6px;text-align:center;font-size:8px;font-weight:600;letter-spacing:0.04em;">ΠΟΣ.</th>
+            <th style="padding:7px 6px;text-align:right;font-size:8px;font-weight:600;letter-spacing:0.04em;">ΤΙΜΗ</th>
+            <th style="padding:7px 6px;text-align:center;font-size:8px;font-weight:600;letter-spacing:0.04em;">ΦΠΑ</th>
+            <th style="padding:7px 6px;text-align:right;font-size:8px;font-weight:600;letter-spacing:0.04em;">ΑΞΙΑ</th>
+          </tr></thead>
+          <tbody>${lineRows}</tbody>
+        </table>
+      </div>
+
+      <!-- SUMMARY: VAT left + Totals right -->
+      <div style="padding:12px 28px;display:flex;gap:16px;">
+        <!-- VAT Analysis -->
+        <div style="flex:1;">
+          <div style="background:#003476;color:#fff;font-size:8px;font-weight:600;padding:4px 10px;letter-spacing:0.06em;">ΑΝΑΛΥΣΗ Φ.Π.Α.</div>
+          <table style="width:100%;border-collapse:collapse;border:1px solid #e5e7eb;border-top:none;">
+            <thead><tr style="background:#f0f2f5;"><th style="padding:4px 6px;text-align:left;font-size:8px;font-weight:600;color:#656d76;">Φ.Π.Α.%</th><th style="padding:4px 6px;text-align:right;font-size:8px;font-weight:600;color:#656d76;">Υποκ. Αξία</th><th style="padding:4px 6px;text-align:right;font-size:8px;font-weight:600;color:#656d76;">Αξία Φ.Π.Α.</th></tr></thead>
+            <tbody>${vatAnalysis}</tbody>
+          </table>
+        </div>
+        <!-- Totals -->
+        <div style="flex:1;">
+          <div style="background:#003476;color:#fff;font-size:8px;font-weight:600;padding:4px 10px;letter-spacing:0.06em;">ΣΥΓΚΕΝΤΡΩΤΙΚΑ ΠΟΣΑ</div>
+          <div style="border:1px solid #e5e7eb;border-top:none;padding:6px 10px;">
+            <div style="display:flex;justify-content:space-between;padding:3px 0;color:#656d76;font-size:10px;"><span>Καθαρή Αξία:</span><span style="color:#1f2328;">${fmtE(inv.totals.net)}</span></div>
+            <div style="display:flex;justify-content:space-between;padding:3px 0;color:#656d76;font-size:10px;"><span>Αξία Φ.Π.Α.:</span><span style="color:#1f2328;">${fmtE(inv.totals.vat)}</span></div>
+            <div style="display:flex;justify-content:space-between;padding:8px 0 4px;border-top:2px solid #003476;margin-top:4px;">
+              <span style="color:#003476;font-weight:700;font-size:12px;">Συνολική Πληρωτέα Αξία:</span>
+              <span style="color:#003476;font-weight:700;font-size:14px;">${fmtE(inv.totals.gross)}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PAYMENT -->
+      <div style="padding:0 28px;">
+        <div style="background:#003476;color:#fff;font-size:8px;font-weight:600;padding:4px 10px;letter-spacing:0.06em;display:inline-block;">ΣΤΟΙΧΕΙΑ ΠΛΗΡΩΜΗΣ</div>
+        <div style="padding:6px 10px;border:1px solid #e5e7eb;border-top:none;font-size:10px;">Τρόπος Πληρωμής: <strong>${inv.payLbl}</strong></div>
+      </div>
+
+      <!-- MARK + QR -->
+      ${inv.mark ? `
+      <div style="margin:12px 28px;padding:12px 14px;background:#e8eef6;border:1px solid #003476;border-radius:4px;display:flex;justify-content:space-between;align-items:flex-start;">
+        <div style="flex:1;font-size:9px;">
+          <div><strong style="color:#003476;">MARK:</strong> <span style="font-size:12px;font-weight:700;color:#003476;">${inv.mark}</span></div>
+          ${inv.uid ? `<div style="margin-top:4px;color:#656d76;">UID: <span style="color:#1f2328;">${inv.uid}</span></div>` : ''}
+          ${inv.auth ? `<div style="margin-top:2px;color:#656d76;">AUTH: <span style="color:#1f2328;">${inv.auth}</span></div>` : ''}
+          ${inv.qrUrl ? `<div style="margin-top:2px;color:#656d76;word-break:break-all;font-size:8px;">${inv.qrUrl}</div>` : ''}
+        </div>
+        <div id="pdf-qr" style="margin-left:10px;flex-shrink:0;"></div>
+      </div>` : ''}
+
+      <!-- FOOTER -->
+      <div style="position:absolute;bottom:16px;left:28px;right:28px;display:flex;justify-content:space-between;font-size:8px;color:#8b949e;border-top:1px solid #e5e7eb;padding-top:8px;">
+        <span>Εκδόθηκε μέσω myDATA App  |  ${new Date().toLocaleString('el')}</span>
+        <span>Σελίδα 1 / 1</span>
+      </div>
     </div>`;
     const container = document.createElement('div');
     container.style.cssText = 'position:fixed;left:-9999px;top:0;z-index:-1;';
@@ -478,7 +592,7 @@ function App() {
           log(`✓ MARK: ${mark||'N/A'}`, 'ok');
           setResp({ok:true,uid,mark,qrUrl,auth,raw:text});
           const typeObj=TYPES.find(t=>t.code===itype), payObj=PAY.find(p2=>p2.code===pay);
-          const fullInv = { afm:cr.afm, branch:cr.branch, series:cr.series, aa, date:new Date().toISOString().slice(0,10), type:itype, typeLbl:typeObj?.label||itype, pay, payLbl:payObj?.label||'', lines:[...lines], totals:{...totals,vg:{...totals.vg}}, mark, uid, auth, qrUrl, env, cp:counterpart?{...counterpart}:null, biz:{ name:cr.bizName||'', title:cr.bizTitle||'', activity:cr.bizActivity||'', address:cr.bizAddress||'', phone:cr.bizPhone||'' } };
+          const fullInv = { afm:cr.afm, branch:cr.branch, series:cr.series, aa, date:new Date().toISOString().slice(0,10), type:itype, typeLbl:typeObj?.label||itype, pay, payLbl:payObj?.label||'', lines:[...lines], totals:{...totals,vg:{...totals.vg}}, mark, uid, auth, qrUrl, env, cp:counterpart?{...counterpart}:null, biz:{ name:cr.bizName||'', title:cr.bizTitle||'', activity:cr.bizActivity||'', address:cr.bizAddress||'', phone:cr.bizPhone||'' }, logo:logo||'' };
           setLastInvoice(fullInv);
           setHistory(h=>{ const next=[fullInv,...h.slice(0,99)]; saveHistory(next); return next; });
           setAa(n=>{ const next=n+1; saveAA(cr.series,itype,next); return next; });
@@ -707,6 +821,20 @@ function App() {
             <div className="field"><div className="field-label">Δραστηριότητα</div><input className="field-input" placeholder="π.χ. Μεταφορές Προσώπων" value={cr.bizActivity||''} onChange={e=>setC('bizActivity',e.target.value)}/></div>
             <div className="field"><div className="field-label">Διεύθυνση</div><input className="field-input" placeholder="π.χ. Λεωφ. Αθηνών 10, Αθήνα 10441" value={cr.bizAddress||''} onChange={e=>setC('bizAddress',e.target.value)}/></div>
             <div className="field"><div className="field-label">Τηλέφωνο</div><input className="field-input" placeholder="π.χ. 210 1234567" value={cr.bizPhone||''} onChange={e=>setC('bizPhone',e.target.value)}/></div>
+            <div className="field">
+              <div className="field-label">Λογότυπο (για PDF)</div>
+              {logo ? (
+                <div style={{display:'flex',alignItems:'center',gap:12}}>
+                  <img src={logo} alt="Logo" style={{maxWidth:80,maxHeight:50,border:'1px solid var(--border)',borderRadius:4,padding:4,background:'#fff'}}/>
+                  <button onClick={removeLogo} style={{background:'none',border:'1px solid var(--border)',color:'var(--red)',fontSize:11,padding:'6px 12px',borderRadius:4,cursor:'pointer'}}>Αφαίρεση</button>
+                </div>
+              ) : (
+                <label style={{display:'block',background:'var(--bg)',border:'1px dashed var(--border)',borderRadius:6,padding:'14px',textAlign:'center',cursor:'pointer',fontSize:12,color:'var(--text-secondary)'}}>
+                  📷 Πατήστε για ανέβασμα logo
+                  <input type="file" accept="image/*" onChange={handleLogoUpload} style={{display:'none'}}/>
+                </label>
+              )}
+            </div>
             <div style={{marginTop:8,padding:'10px 12px',background:'var(--blue-bg)',border:'1px solid var(--blue)',borderRadius:6,fontSize:11,color:'var(--blue)',lineHeight:1.7}}>Τα στοιχεία αποθηκεύονται τοπικά στον browser σου. Τα στοιχεία επιχείρησης εμφανίζονται μόνο στο PDF.</div>
             <div style={{borderTop:'1px solid var(--border)',margin:'16px 0'}}/>
             <div style={{fontSize:11,fontWeight:600,color:'var(--blue)',marginBottom:10,letterSpacing:'0.05em'}}>ΑΠΟΘΗΚΕΥΜΕΝΕΣ ΥΠΗΡΕΣΙΕΣ</div>
