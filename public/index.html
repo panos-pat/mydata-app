@@ -453,12 +453,12 @@ function App() {
       <div style="border:1px solid #b0b8c4;padding:6px 10px;margin-top:10px;font-size:10px;color:#656d76;min-height:24px;"><span style="font-weight:600;">Παρατηρήσεις:</span> ${inv.notes||''}</div>
       <div style="position:absolute;bottom:22px;left:24px;right:24px;">
         <div style="display:flex;justify-content:space-between;align-items:flex-end;">
-          <div id="pdf-qr" style="width:65px;height:65px;flex-shrink:0;"></div>
+          <div id="pdf-qr" style="width:120px;height:120px;flex-shrink:0;"></div>
           <div style="text-align:center;flex:1;padding:0 16px;">
             <div style="font-size:9px;color:#1a1a1a;font-weight:500;">Σελίδα 1 από 1</div>
             <div style="font-size:7px;color:#8b949e;margin-top:4px;">Η ευθύνη για το περιεχόμενο του παραστατικού ανήκει αποκλειστικά στον εκδότη αυτού</div>
           </div>
-          <div style="width:65px;"></div>
+          <div style="width:120px;"></div>
         </div>
       </div>
     </div>`;
@@ -468,7 +468,7 @@ function App() {
     document.body.appendChild(container);
     const qrEl = container.querySelector('#pdf-qr');
     const qrData = inv.qrUrl || (inv.mark ? `https://mydata.aade.gr/invoice/${inv.mark}` : null);
-    if (qrEl && qrData) { new QRCode(qrEl, { text:qrData, width:60, height:60, colorDark:'#003476', colorLight:'#ffffff', correctLevel:QRCode.CorrectLevel.M }); await new Promise(r=>setTimeout(r,150)); }
+    if (qrEl && qrData) { new QRCode(qrEl, { text:qrData, width:120, height:120, colorDark:'#003476', colorLight:'#ffffff', correctLevel:QRCode.CorrectLevel.M }); await new Promise(r=>setTimeout(r,200)); }
     try {
       const canvas = await html2canvas(container.firstElementChild, { scale:1.5, backgroundColor:'#ffffff', useCORS:true, logging:false });
       const imgData = canvas.toDataURL('image/jpeg', 0.75);
