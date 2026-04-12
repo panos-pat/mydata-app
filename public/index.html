@@ -373,12 +373,12 @@ function App() {
     const html = `<div style="width:595px;min-height:842px;background:#fff;color:#1a1a1a;font-family:Inter,system-ui,sans-serif;font-size:10px;padding:24px;position:relative;">
       <div style="display:flex;gap:16px;align-items:flex-start;margin-bottom:14px;">
         <table style="flex:1;font-size:10px;border-collapse:collapse;">
-          <tr><td style="background:#003476;color:#fff;padding:5px 10px;font-weight:600;font-size:9px;width:80px;border:1px solid #003476;">Επωνυμία</td><td style="padding:5px 10px;border:1px solid #b0b8c4;">${inv.biz.name||''}</td></tr>
-          <tr><td style="background:#003476;color:#fff;padding:5px 10px;font-weight:600;font-size:9px;border:1px solid #003476;">Α.Φ.Μ.</td><td style="padding:5px 10px;border:1px solid #b0b8c4;">${inv.afm}</td></tr>
-          <tr><td style="background:#003476;color:#fff;padding:5px 10px;font-weight:600;font-size:9px;border:1px solid #003476;">Επάγγελμα</td><td style="padding:5px 10px;border:1px solid #b0b8c4;">${inv.biz.activity||''}</td></tr>
-          <tr><td style="background:#003476;color:#fff;padding:5px 10px;font-weight:600;font-size:9px;border:1px solid #003476;">Δ.Ο.Υ.</td><td style="padding:5px 10px;border:1px solid #b0b8c4;">${inv.biz.doy||''}</td></tr>
-          <tr><td style="background:#003476;color:#fff;padding:5px 10px;font-weight:600;font-size:9px;border:1px solid #003476;">Διεύθυνση</td><td style="padding:5px 10px;border:1px solid #b0b8c4;">${inv.biz.address||''}</td></tr>
-          <tr><td style="background:#003476;color:#fff;padding:5px 10px;font-weight:600;font-size:9px;border:1px solid #003476;">Τηλ.</td><td style="padding:5px 10px;border:1px solid #b0b8c4;">${inv.biz.phone||''}</td></tr>
+          ${inv.biz.name ? `<tr><td style="background:#003476;color:#fff;padding:5px 10px;font-weight:600;font-size:9px;width:80px;border:1px solid #003476;">Επωνυμία</td><td style="padding:5px 10px;border:1px solid #b0b8c4;">${inv.biz.name}</td></tr>` : ''}
+          <tr><td style="background:#003476;color:#fff;padding:5px 10px;font-weight:600;font-size:9px;width:80px;border:1px solid #003476;">Α.Φ.Μ.</td><td style="padding:5px 10px;border:1px solid #b0b8c4;">${inv.afm}</td></tr>
+          ${inv.biz.activity ? `<tr><td style="background:#003476;color:#fff;padding:5px 10px;font-weight:600;font-size:9px;border:1px solid #003476;">Επάγγελμα</td><td style="padding:5px 10px;border:1px solid #b0b8c4;">${inv.biz.activity}</td></tr>` : ''}
+          ${inv.biz.doy ? `<tr><td style="background:#003476;color:#fff;padding:5px 10px;font-weight:600;font-size:9px;border:1px solid #003476;">Δ.Ο.Υ.</td><td style="padding:5px 10px;border:1px solid #b0b8c4;">${inv.biz.doy}</td></tr>` : ''}
+          ${inv.biz.address ? `<tr><td style="background:#003476;color:#fff;padding:5px 10px;font-weight:600;font-size:9px;border:1px solid #003476;">Διεύθυνση</td><td style="padding:5px 10px;border:1px solid #b0b8c4;">${inv.biz.address}</td></tr>` : ''}
+          ${inv.biz.phone ? `<tr><td style="background:#003476;color:#fff;padding:5px 10px;font-weight:600;font-size:9px;border:1px solid #003476;">Τηλ.</td><td style="padding:5px 10px;border:1px solid #b0b8c4;">${inv.biz.phone}</td></tr>` : ''}
         </table>
         ${invoiceLogo ? `<div style="width:140px;flex-shrink:0;text-align:right;padding-top:5px;"><img src="${invoiceLogo}" style="max-width:130px;max-height:65px;object-fit:contain;"/></div>` : ''}
       </div>
